@@ -798,28 +798,31 @@
   <div class="container">
     <div id="alertBox" class="alert"></div>
 
-    <!-- Pengaturan URL Web App & PIN Tim IT (Disimpan Permanen di Browser Perangkat) -->
+    <!-- Pengaturan URL Web App & PIN Tim IT (Disimpan Tersembunyi di Browser Perangkat) -->
     <div id="apiConfigBox" class="api-bar" style="display:none;">
-      <div style="font-weight:700; color:var(--primary); margin-bottom:8px;">Koneksi Server &amp; PIN Tim IT (Cukup Isi 1x per Perangkat)</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px;">
+        <span style="font-weight:700; color:var(--primary);">Koneksi Server &amp; PIN Tim IT (Cukup Isi 1x)</span>
+        <button type="button" class="btn btn-danger" style="padding:3px 8px; font-size:11px;" onclick="toggleApiBox(false)">Tutup</button>
+      </div>
       <div class="grid-2">
         <div class="field" style="margin-bottom:0;">
           <label>URL Web App Google Apps Script *</label>
-          <input type="url" id="txtApiUrl" placeholder="https://script.google.com/macros/s/.../exec">
+          <input type="password" id="txtApiUrl" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec">
         </div>
         <div class="field" style="margin-bottom:0;">
           <label>PIN Rahasia Tim IT *</label>
-          <div class="row-inline">
-            <input type="password" id="txtApiPin" placeholder="Masukkan PIN (mis. SAPPHIRE2026)">
-            <button type="button" id="btnTogglePinVis" class="btn btn-outline btn-sm" style="white-space:nowrap;" onclick="togglePinVisibility()">Lihat</button>
-          </div>
+          <input type="password" id="txtApiPin" autocomplete="off" placeholder="Masukkan PIN Tim IT">
         </div>
       </div>
-      <div class="row-inline" style="margin-top:9px; justify-content:space-between; flex-wrap:wrap;">
+      <div class="row-inline" style="margin-top:9px; justify-content:space-between; flex-wrap:wrap; gap:8px;">
         <div style="color:#475569; font-size:12px;">
           Status: <strong id="apiStatusText">Belum diatur</strong> &bull;
-          <a href="javascript:void(0)" onclick="syncFromServer(false)">Sinkronisasi Data Sekarang</a>
+          <a href="javascript:void(0)" onclick="syncFromServer(false)">Sinkronisasi Data</a>
         </div>
-        <button type="button" class="btn btn-primary btn-sm" style="width:auto;" onclick="saveApiConfig()">Simpan &amp; Hubungkan</button>
+        <div class="row-inline" style="gap:6px;">
+          <button type="button" id="btnResetApi" class="btn btn-outline btn-sm" style="width:auto; display:none;" onclick="resetApiConfig()">Reset Kunci</button>
+          <button type="button" class="btn btn-primary btn-sm" style="width:auto;" onclick="saveApiConfig()">Simpan &amp; Kunci</button>
+        </div>
       </div>
     </div>
 
@@ -970,6 +973,7 @@
       <div id="lensViewport" class="lens-viewport">
         <video id="lensVideo" playsinline autoplay muted></video>
         <canvas id="lensOverlayCanvas" class="lens-overlay-canvas"></canvas>
+        <div id="qrHiddenWorker" style="display:none;"></div>
         <div id="lensReticle" class="lens-reticle">
           <div class="lens-corner tl"></div>
           <div class="lens-corner tr"></div>
@@ -1155,8 +1159,9 @@
     window.onload = function() {
       const savedUrl = HARDCODED_API_URL || localStorage.getItem(STORAGE_KEY_URL) || '';
       const savedPin = localStorage.getItem(STORAGE_KEY_PIN) || '';
-      document.getElementById('txtApiUrl').value = savedUrl;
-      document.getElementById('txtApiPin').value = savedPin;
+      // Kosongkan value input agar URL & PIN rahasia tidak pernah tampil terbaca di layar
+      document.getElementById('txtApiUrl').value = '';
+      document.getElementById('txtApiPin').value = '';
       document.getElementById('txtPIC').value = localStorage.getItem(STORAGE_KEY_PIC) || '';
 
       if (IS_APPS_SCRIPT_HOST) {
@@ -1198,56 +1203,81 @@
       localStorage.setItem(STORAGE_KEY_PIC, document.getElementById('txtPIC').value.trim());
     }
 
-    function toggleApiBox() {
+    function toggleApiBox(forceState) {
       if (IS_APPS_SCRIPT_HOST) return;
       const box = document.getElementById('apiConfigBox');
-      box.style.display = box.style.display === 'none' ? 'block' : 'none';
+      const show = typeof forceState === 'boolean' ? forceState : (box.style.display === 'none');
+      // Selalu bersihkan field teks saat kotak dibuka agar key lama tidak pernah muncul
+      document.getElementById('txtApiUrl').value = '';
+      document.getElementById('txtApiPin').value = '';
+      box.style.display = show ? 'block' : 'none';
     }
 
-    function togglePinVisibility() {
-      const inp = document.getElementById('txtApiPin');
-      const btn = document.getElementById('btnTogglePinVis');
-      if (inp.type === 'password') {
-        inp.type = 'text';
-        btn.textContent = 'Sembunyi';
-      } else {
-        inp.type = 'password';
-        btn.textContent = 'Lihat';
-      }
+    function resetApiConfig() {
+      if (!confirm('Hapus URL Web App & PIN Tim IT yang tersimpan di perangkat ini?')) return;
+      localStorage.removeItem(STORAGE_KEY_URL);
+      localStorage.removeItem(STORAGE_KEY_PIN);
+      document.getElementById('txtApiUrl').value = '';
+      document.getElementById('txtApiPin').value = '';
+      updateApiStatusUI('', '');
+      document.getElementById('apiConfigBox').style.display = 'block';
     }
 
     function saveApiConfig() {
-      const url = document.getElementById('txtApiUrl').value.trim();
-      const pin = document.getElementById('txtApiPin').value.trim();
-      if (!url.startsWith('https://script.google.com/')) {
-        alert('Pastikan URL diawali dengan https://script.google.com/...');
+      const inputUrl = document.getElementById('txtApiUrl').value.trim();
+      const inputPin = document.getElementById('txtApiPin').value.trim();
+      const finalUrl = inputUrl || getApiUrl();
+      const finalPin = inputPin || getApiPin();
+
+      if (!finalUrl || !finalUrl.startsWith('https://script.google.com/')) {
+        alert('Tempelkan URL Web App yang diawali https://script.google.com/...');
         return;
       }
-      if (!pin) {
+      if (!finalPin) {
         alert('Masukkan PIN Rahasia Tim IT terlebih dahulu.');
         return;
       }
-      localStorage.setItem(STORAGE_KEY_URL, url);
-      localStorage.setItem(STORAGE_KEY_PIN, pin);
-      updateApiStatusUI(url, pin);
+
+      localStorage.setItem(STORAGE_KEY_URL, finalUrl);
+      localStorage.setItem(STORAGE_KEY_PIN, finalPin);
+
+      // Langsung hapus isi kotak input & tutup panel agar key tersembunyi aman
+      document.getElementById('txtApiUrl').value = '';
+      document.getElementById('txtApiPin').value = '';
+      document.getElementById('apiConfigBox').style.display = 'none';
+
+      updateApiStatusUI(finalUrl, finalPin);
       syncFromServer(false);
     }
 
     function updateApiStatusUI(url, pin) {
       const badge = document.getElementById('connBadge');
       const txt = document.getElementById('apiStatusText');
+      const urlInp = document.getElementById('txtApiUrl');
+      const pinInp = document.getElementById('txtApiPin');
+      const resetBtn = document.getElementById('btnResetApi');
+
       if (url && pin) {
         badge.textContent = 'Terhubung (PIN Aktif)';
         badge.style.background = '#15803d';
-        txt.textContent = 'URL & PIN tersimpan di perangkat';
+        txt.textContent = 'Terkunci & tersimpan aman di perangkat';
+        if (urlInp) urlInp.placeholder = 'URL sudah tersimpan (kosongkan jika tidak diubah)';
+        if (pinInp) pinInp.placeholder = '•••••••••••• (sudah tersimpan & dikunci)';
+        if (resetBtn) resetBtn.style.display = 'inline-flex';
       } else if (url && !pin) {
         badge.textContent = 'Isi PIN IT';
         badge.style.background = '#b45309';
         txt.textContent = 'URL tersimpan, PIN Tim IT belum diisi';
+        if (urlInp) urlInp.placeholder = 'URL sudah tersimpan';
+        if (pinInp) pinInp.placeholder = 'Masukkan PIN Rahasia Tim IT';
+        if (resetBtn) resetBtn.style.display = 'inline-flex';
       } else {
         badge.textContent = 'Atur URL & PIN';
         badge.style.background = '#b45309';
         txt.textContent = 'Belum diatur (tempel URL Web App & PIN IT)';
+        if (urlInp) urlInp.placeholder = 'https://script.google.com/macros/s/.../exec';
+        if (pinInp) pinInp.placeholder = 'Masukkan PIN Rahasia Tim IT';
+        if (resetBtn) resetBtn.style.display = 'none';
       }
     }
 
@@ -2338,7 +2368,7 @@
       await runUnifiedLensPipeline(rawCanvas, psm);
     }
 
-    // ---------- UNIFIED PIPELINE: DECODE BARCODES/QR + OCR TEXT SIMULTANEOUSLY ----------
+    // ---------- UNIFIED PIPELINE: DECODE BARCODES/QR + DENOISED MULTI-PASS OCR ----------
     async function decodeCodesFromCanvas(sourceCanvas) {
       const found = [];
       const pushUnique = (format, value) => {
@@ -2363,7 +2393,7 @@
       if (found.length === 0 && typeof Html5Qrcode !== 'undefined') {
         try {
           if (!html5QrFileInstance) {
-            html5QrFileInstance = new Html5Qrcode('lensOverlayCanvas', {
+            html5QrFileInstance = new Html5Qrcode('qrHiddenWorker', {
               formatsToSupport: [
                 Html5QrcodeSupportedFormats.QR_CODE,
                 Html5QrcodeSupportedFormats.CODE_128,
@@ -2380,7 +2410,7 @@
               ]
             });
           }
-          const pad = 24;
+          const pad = 28;
           const qCanvas = document.createElement('canvas');
           qCanvas.width = sourceCanvas.width + pad * 2;
           qCanvas.height = sourceCanvas.height + pad * 2;
@@ -2399,36 +2429,138 @@
       return found;
     }
 
-    function buildEnhancedOcrCanvas(sourceCanvas) {
+    // Menghapus tekstur bintik plastik/logam (Median 3x3 + Gaussian) lalu Otsu Thresholding
+    function buildDenoisedOcrVariants(sourceCanvas) {
       const sw = sourceCanvas.width;
       const sh = sourceCanvas.height;
       let factor = 1;
-      if (sh < 140) factor = Math.min(3, 160 / Math.max(sh, 1));
+      if (sh < 180) factor = Math.min(3.2, 220 / Math.max(sh, 1));
       else if (sw > 1400) factor = 1400 / sw;
 
-      const dw = Math.round(sw * factor);
-      const dh = Math.round(sh * factor);
-      const pad = 16;
+      const dw = Math.max(20, Math.round(sw * factor));
+      const dh = Math.max(20, Math.round(sh * factor));
+      const pad = 24;
 
-      const canvas = document.createElement('canvas');
-      canvas.width = dw + pad * 2;
-      canvas.height = dh + pad * 2;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(sourceCanvas, 0, 0, sw, sh, pad, pad, dw, dh);
+      const work = document.createElement('canvas');
+      work.width = dw;
+      work.height = dh;
+      const wCtx = work.getContext('2d');
+      wCtx.imageSmoothingEnabled = true;
+      wCtx.imageSmoothingQuality = 'high';
+      wCtx.drawImage(sourceCanvas, 0, 0, sw, sh, 0, 0, dw, dh);
 
-      const imgData = ctx.getImageData(pad, pad, dw, dh);
-      const d = imgData.data;
-      const contrast = 1.42;
-      const intercept = 128 * (1 - contrast);
-      for (let i = 0; i < d.length; i += 4) {
-        const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-        const adj = Math.max(0, Math.min(255, gray * contrast + intercept));
-        d[i] = d[i + 1] = d[i + 2] = adj;
+      const srcData = wCtx.getImageData(0, 0, dw, dh).data;
+      const total = dw * dh;
+      const gray = new Uint8Array(total);
+      for (let i = 0, p = 0; i < srcData.length; i += 4, p++) {
+        gray[p] = Math.round(0.299 * srcData[i] + 0.587 * srcData[i + 1] + 0.114 * srcData[i + 2]);
       }
-      ctx.putImageData(imgData, pad, pad);
-      return canvas;
+
+      // 1. 3x3 Median Filter untuk membuang noise bintik permukaan plastik kasar
+      const med = new Uint8Array(total);
+      const win = new Uint8Array(9);
+      for (let y = 0; y < dh; y++) {
+        const ym1 = y > 0 ? y - 1 : 0;
+        const yp1 = y < dh - 1 ? y + 1 : dh - 1;
+        for (let x = 0; x < dw; x++) {
+          const xm1 = x > 0 ? x - 1 : 0;
+          const xp1 = x < dw - 1 ? x + 1 : dw - 1;
+          win[0] = gray[ym1 * dw + xm1];
+          win[1] = gray[ym1 * dw + x];
+          win[2] = gray[ym1 * dw + xp1];
+          win[3] = gray[y * dw + xm1];
+          win[4] = gray[y * dw + x];
+          win[5] = gray[y * dw + xp1];
+          win[6] = gray[yp1 * dw + xm1];
+          win[7] = gray[yp1 * dw + x];
+          win[8] = gray[yp1 * dw + xp1];
+          win.sort();
+          med[y * dw + x] = win[4];
+        }
+      }
+
+      // 2. 3x3 Gaussian-like Smoothing [1,2,1; 2,4,2; 1,2,1] / 16
+      const smooth = new Uint8Array(total);
+      const hist = new Uint32Array(256);
+      for (let y = 0; y < dh; y++) {
+        const ym1 = y > 0 ? y - 1 : 0;
+        const yp1 = y < dh - 1 ? y + 1 : dh - 1;
+        for (let x = 0; x < dw; x++) {
+          const xm1 = x > 0 ? x - 1 : 0;
+          const xp1 = x < dw - 1 ? x + 1 : dw - 1;
+          const v = (
+            med[ym1 * dw + xm1] + 2 * med[ym1 * dw + x] + med[ym1 * dw + xp1] +
+            2 * med[y * dw + xm1] + 4 * med[y * dw + x] + 2 * med[y * dw + xp1] +
+            med[yp1 * dw + xm1] + 2 * med[yp1 * dw + x] + med[yp1 * dw + xp1]
+          ) >> 4;
+          smooth[y * dw + x] = v;
+          hist[v]++;
+        }
+      }
+
+      // 3. Otsu Auto-Thresholding
+      let sumTotal = 0;
+      for (let i = 0; i < 256; i++) sumTotal += i * hist[i];
+      let sumB = 0;
+      let wB = 0;
+      let maxVar = 0;
+      let thresh = 128;
+      for (let i = 0; i < 256; i++) {
+        wB += hist[i];
+        if (wB === 0) continue;
+        const wF = total - wB;
+        if (wF === 0) break;
+        sumB += i * hist[i];
+        const mB = sumB / wB;
+        const mF = (sumTotal - sumB) / wF;
+        const between = wB * wF * (mB - mF) * (mB - mF);
+        if (between > maxVar) {
+          maxVar = between;
+          thresh = i;
+        }
+      }
+
+      // Cek apakah background gelap dengan teks terang (auto-invert jika mayoritas piksel di bawah threshold)
+      let darkCount = 0;
+      for (let p = 0; p < total; p++) {
+        if (smooth[p] <= thresh) darkCount++;
+      }
+      const invert = darkCount > total * 0.62;
+
+      // Canvas A: Binarized Otsu (teks hitam tajam di atas putih bersih)
+      const binCanvas = document.createElement('canvas');
+      binCanvas.width = dw + pad * 2;
+      binCanvas.height = dh + pad * 2;
+      const bCtx = binCanvas.getContext('2d');
+      bCtx.fillStyle = '#ffffff';
+      bCtx.fillRect(0, 0, binCanvas.width, binCanvas.height);
+      const bImg = bCtx.createImageData(dw, dh);
+      const bd = bImg.data;
+
+      // Canvas B: Denoised Grayscale (cadangan jika binarization terlalu tipis)
+      const grayCanvas = document.createElement('canvas');
+      grayCanvas.width = dw + pad * 2;
+      grayCanvas.height = dh + pad * 2;
+      const gCtx = grayCanvas.getContext('2d');
+      gCtx.fillStyle = '#ffffff';
+      gCtx.fillRect(0, 0, grayCanvas.width, grayCanvas.height);
+      const gImg = gCtx.createImageData(dw, dh);
+      const gd = gImg.data;
+
+      for (let p = 0, i = 0; p < total; p++, i += 4) {
+        const isLight = smooth[p] > thresh;
+        const val = (invert ? !isLight : isLight) ? 255 : 0;
+        bd[i] = bd[i + 1] = bd[i + 2] = val;
+        bd[i + 3] = 255;
+
+        const gv = invert ? (255 - smooth[p]) : smooth[p];
+        gd[i] = gd[i + 1] = gd[i + 2] = gv;
+        gd[i + 3] = 255;
+      }
+      bCtx.putImageData(bImg, pad, pad);
+      gCtx.putImageData(gImg, pad, pad);
+
+      return { binCanvas, grayCanvas };
     }
 
     async function runUnifiedLensPipeline(rawCanvas, psmMode) {
@@ -2436,40 +2568,65 @@
       const progWrap = document.getElementById('ocrProgressWrap');
       const progBar = document.getElementById('ocrProgressBar');
 
-      const previewUrl = rawCanvas.toDataURL('image/png');
-      document.getElementById('croppedStripImg').src = previewUrl;
-      document.getElementById('croppedStripWrap').style.display = 'block';
-
       progWrap.style.display = 'block';
-      progBar.style.width = '15%';
-      statusEl.textContent = 'Smart Lens memindai QR, Barcode, dan Teks secara bersamaan...';
+      progBar.style.width = '12%';
+      statusEl.textContent = 'Smart Lens memindai QR, Barcode, dan membersihkan tekstur label...';
 
       const codes = await decodeCodesFromCanvas(rawCanvas);
-      progBar.style.width = '35%';
+      progBar.style.width = '30%';
+
+      const { binCanvas, grayCanvas } = buildDenoisedOcrVariants(rawCanvas);
+      // Tampilkan versi bersih hitam-putih pada pratinjau agar pengguna melihat hasil pembersihan noise
+      document.getElementById('croppedStripImg').src = binCanvas.toDataURL('image/png');
+      document.getElementById('croppedStripWrap').style.display = 'block';
 
       let rawOcrText = '';
       if (typeof Tesseract !== 'undefined') {
+        let worker = null;
         try {
-          const ocrCanvas = buildEnhancedOcrCanvas(rawCanvas);
-          const ocrDataUrl = ocrCanvas.toDataURL('image/png');
-          const worker = await Tesseract.createWorker('eng', 1, {
+          worker = await Tesseract.createWorker('eng', 1, {
             logger: m => {
               if (m.status === 'recognizing text') {
-                const pct = 35 + Math.round((m.progress || 0) * 65);
+                const pct = 30 + Math.round((m.progress || 0) * 50);
                 progBar.style.width = pct + '%';
-                statusEl.textContent = 'Smart Lens membaca teks & spesifikasi... ' + pct + '%';
+                statusEl.textContent = 'Membaca karakter Serial Number & teks... ' + pct + '%';
+              } else if (m.status) {
+                statusEl.textContent = 'Menyiapkan mesin OCR (' + m.status + ')...';
               }
             }
           });
+
+          // Pass 1: Otsu Binarized Clean Image dengan PSM 6 (blok teks seragam)
           await worker.setParameters({
-            tessedit_pageseg_mode: String(psmMode || 6)
+            tessedit_pageseg_mode: '6'
           });
-          const res = await worker.recognize(ocrDataUrl);
-          await worker.terminate();
-          rawOcrText = (res && res.data && res.data.text) ? res.data.text : '';
+          const res1 = await worker.recognize(binCanvas.toDataURL('image/png'));
+          rawOcrText = (res1 && res1.data && res1.data.text) ? res1.data.text.trim() : '';
+
+          // Pass 2 (Fallback otomatis): Jika Pass 1 kosong atau belum menangkap SN, coba Denoised Grayscale + PSM 11 (Sparse Text)
+          const hasValidSn = /(?:S\/N|SIN|5\/N|SN|SERIAL|IMEI|[A-Z0-9]{6,})/i.test(rawOcrText);
+          if (!rawOcrText || !hasValidSn) {
+            progBar.style.width = '85%';
+            statusEl.textContent = 'Mengoptimalkan pembacaan teks (Mode Sparse)...';
+            await worker.setParameters({
+              tessedit_pageseg_mode: '11'
+            });
+            const res2 = await worker.recognize(grayCanvas.toDataURL('image/png'));
+            const text2 = (res2 && res2.data && res2.data.text) ? res2.data.text.trim() : '';
+            if (text2) {
+              rawOcrText = [rawOcrText, text2].filter(Boolean).join('\n');
+            }
+          }
         } catch (err) {
           console.error('OCR error:', err);
+          statusEl.textContent = 'Mesin OCR terkendala jaringan (' + (err.message || err) + '). Silakan ketik SN manual di bawah.';
+        } finally {
+          if (worker) {
+            try { await worker.terminate(); } catch (e) {}
+          }
         }
+      } else {
+        statusEl.textContent = 'Mesin OCR belum termuat (periksa koneksi internet untuk memuat library Tesseract).';
       }
 
       progBar.style.width = '100%';
@@ -2481,7 +2638,7 @@
       } else if (rawOcrText.trim()) {
         statusEl.textContent = 'Teks terbaca (lihat kotak Teks Lengkap di bawah).';
       } else {
-        statusEl.textContent = 'Belum ada QR/Barcode/Teks yang jelas. Coba geser kotak fokus lebih dekat ke tulisan atau nyalakan Senter.';
+        statusEl.textContent = 'Belum ada QR/Barcode/Teks yang terbaca. Pastikan foto fokus & tidak buram, atau ketik manual di kolom bawah.';
       }
     }
 
@@ -2557,7 +2714,7 @@
         }
       }
 
-      const snRegex = /(?:S\/N|SN|SERIAL(?:\s*NO\.?|\s*NUMBER)?|IMEI\d?|SERVICE\s*TAG|ST)\s*[:#\-]?\s*([A-Za-z0-9\-]{5,30})/gi;
+      const snRegex = /(?:S\/N|SIN|5\/N|SN|SERIAL(?:\s*NO\.?|\s*NUMBER)?|IMEI\d?|SERVICE\s*TAG|ST)\s*[:#\-.;]?\s*([A-Za-z0-9\-]{5,30})/gi;
       let sMatch;
       while ((sMatch = snRegex.exec(combinedText)) !== null) {
         addEntity('sn', 'tag-sn', 'Serial Number / IMEI', sMatch[1], 'sn');
