@@ -287,7 +287,7 @@
       box-shadow: 0 20px 40px rgba(0,0,0,0.25);
     }
 
-    /* Google Lens Smart Scanner UI & Interactive Cropper */
+    /* Html5Qrcode + Smart Lens Scanner UI & Interactive Cropper */
     .lens-mode-tabs {
       display: grid;
       grid-template-columns: 1.25fr 1fr 1fr;
@@ -315,140 +315,140 @@
       box-shadow: 0 1px 4px rgba(15,23,42,0.12);
     }
 
-    /* Unified Google Lens Live Viewfinder */
-    .lens-viewport {
+    /* Camera Lens Selector Bar */
+    .cam-select-bar {
+      display: none;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .cam-select-bar select {
+      flex: 1;
+      padding: 6px 8px;
+      font-size: 12px;
+      border-radius: 7px;
+      background: #f8fafc;
+    }
+
+    /* Html5Qrcode Live Viewport */
+    .h5qr-shell {
       position: relative;
       width: 100%;
-      height: 265px;
       border-radius: 12px;
       overflow: hidden;
       background: #0b1220;
       display: none;
       margin-bottom: 8px;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+      box-shadow: 0 4px 16px rgba(15,23,42,0.22);
     }
-    .lens-viewport video {
+    #html5QrReader {
       width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
+      min-height: 240px;
+      background: #0b1220;
     }
-    .lens-overlay-canvas {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 2;
-    }
-    .lens-reticle {
-      position: absolute;
-      left: 10%;
-      width: 80%;
-      top: 50%;
-      height: 155px;
-      transform: translateY(-50%);
+    #html5QrReader video {
+      width: 100% !important;
+      object-fit: cover !important;
       border-radius: 12px;
-      box-shadow: 0 0 0 9999px rgba(11, 18, 32, 0.42);
-      pointer-events: none;
-      z-index: 3;
-      transition: all 0.2s ease;
     }
-    .lens-reticle.slit {
-      left: 6%;
-      width: 88%;
-      height: 58px;
-      border-radius: 8px;
-      box-shadow: 0 0 0 9999px rgba(11, 18, 32, 0.68);
+    /* Style the native html5-qrcode shaded region & laser */
+    #html5QrReader #qr-shaded-region {
+      border-color: rgba(11, 18, 32, 0.62) !important;
     }
-    .lens-reticle.square {
-      left: 22%;
-      width: 56%;
-      height: 165px;
-      box-shadow: 0 0 0 9999px rgba(11, 18, 32, 0.58);
-    }
-    .lens-corner {
+    .h5qr-top-badge {
       position: absolute;
-      width: 22px;
-      height: 22px;
-      border-color: #ffffff;
-      border-style: solid;
-      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.6));
-    }
-    .lens-corner.tl { top: -2px; left: -2px; border-width: 3.5px 0 0 3.5px; border-top-left-radius: 10px; }
-    .lens-corner.tr { top: -2px; right: -2px; border-width: 3.5px 3.5px 0 0; border-top-right-radius: 10px; }
-    .lens-corner.bl { bottom: -2px; left: -2px; border-width: 0 0 3.5px 3.5px; border-bottom-left-radius: 10px; }
-    .lens-corner.br { bottom: -2px; right: -2px; border-width: 0 3.5px 3.5px 0; border-bottom-right-radius: 10px; }
-
-    .lens-scan-line {
-      position: absolute;
-      left: 6px;
-      right: 6px;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, #38bdf8, #a5f3fc, #38bdf8, transparent);
-      box-shadow: 0 0 8px #38bdf8;
-      animation: lensSweep 2.4s ease-in-out infinite;
-    }
-    @keyframes lensSweep {
-      0%, 100% { top: 10%; opacity: 0.35; }
-      50% { top: 88%; opacity: 0.95; }
-    }
-
-    .lens-top-pill {
-      position: absolute;
-      top: 10px;
+      top: 9px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(15, 23, 42, 0.78);
+      background: rgba(15, 23, 42, 0.82);
       backdrop-filter: blur(6px);
       color: #f8fafc;
       font-size: 11px;
       font-weight: 600;
       padding: 4px 11px;
       border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.16);
+      border: 1px solid rgba(255,255,255,0.18);
       white-space: nowrap;
-      z-index: 4;
+      z-index: 12;
       pointer-events: none;
     }
-
-    .lens-shutter-bar {
-      position: absolute;
-      bottom: 10px;
-      left: 0;
-      right: 0;
+    .h5qr-bottom-bar {
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 12px;
-      z-index: 5;
+      gap: 8px;
+      padding: 9px 10px;
+      background: #0f172a;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      flex-wrap: wrap;
     }
     .btn-lens-shutter {
-      background: rgba(255, 255, 255, 0.96);
+      background: #ffffff;
       color: var(--primary);
-      border: 3px solid #38bdf8;
+      border: 2.5px solid #38bdf8;
       border-radius: 999px;
-      padding: 8px 16px;
-      font-size: 13px;
+      padding: 7px 14px;
+      font-size: 12.5px;
       font-weight: 800;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
     }
     .btn-lens-shutter:active { transform: scale(0.97); }
     .btn-lens-mini {
-      background: rgba(15, 23, 42, 0.78);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255, 255, 255, 0.12);
+      color: #f8fafc;
+      border: 1px solid rgba(255,255,255,0.22);
       border-radius: 999px;
-      padding: 7px 11px;
+      padding: 6px 10px;
       font-size: 11.5px;
       font-weight: 600;
       cursor: pointer;
+      white-space: nowrap;
     }
+    .btn-lens-mini:hover { background: rgba(255,255,255,0.22); }
     .btn-lens-mini.on { background: #f59e0b; border-color: #fbbf24; color: #fff; }
+    .btn-lens-mini.danger { background: rgba(220, 38, 38, 0.85); border-color: #f87171; }
+
+    /* Hardware Zoom & Presets Bar */
+    .cam-controls {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    .zoom-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .zoom-row input[type="range"] { flex: 1; padding: 0; border: none; background: transparent; box-shadow: none; }
+    .zoom-presets {
+      display: flex;
+      gap: 5px;
+    }
+    .btn-zoom-pill {
+      flex: 1;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: #334155;
+      border-radius: 5px;
+      padding: 3px 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-zoom-pill:hover, .btn-zoom-pill.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
 
     .lens-live-toast {
       display: none;
@@ -474,19 +474,6 @@
       margin: 6px 0 8px;
       line-height: 1.4;
     }
-
-    .cam-controls {
-      display: none;
-      align-items: center;
-      gap: 8px;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 7px;
-      padding: 6px 10px;
-      margin-bottom: 8px;
-      font-size: 12px;
-    }
-    .cam-controls input[type="range"] { flex: 1; padding: 0; border: none; background: transparent; box-shadow: none; }
 
     /* Interactive Spotlight Cropper */
     .crop-panel {
@@ -604,7 +591,7 @@
     .progress-wrap { background: #e2e8f0; border-radius: 999px; height: 7px; overflow: hidden; margin: 8px 0 4px; display: none; }
     .progress-bar { background: linear-gradient(90deg, var(--primary), #0284c7); height: 100%; width: 0%; transition: width 0.2s; }
 
-    /* Google Lens Smart Entity Cards & Chips */
+    /* Smart Entity Cards & Chips */
     .lens-results-panel {
       display: none;
       margin-top: 10px;
@@ -945,22 +932,28 @@
     </div>
   </div>
 
-  <!-- Modal Google Lens Style: Auto Deteksi QR, Barcode & Teks -->
+  <!-- Modal Html5Qrcode + Smart Lens: Auto Deteksi QR, Barcode & Teks -->
   <div id="snModal" class="modal-bg">
     <div class="modal" style="max-width:540px;">
       <div class="card-title">
-        <span>Smart Lens — Scan QR, Barcode &amp; Teks</span>
+        <span>Smart Lens — Html5Qrcode &amp; OCR</span>
         <button type="button" class="btn btn-danger" onclick="closeSnModal()">Tutup</button>
       </div>
 
-      <!-- Mode Switcher ala Google Lens -->
+      <!-- Mode Switcher ROI -->
       <div class="lens-mode-tabs">
         <button type="button" id="lensTabAuto" class="tab-btn active" onclick="setLensMode('auto')">Auto Lens (Semua)</button>
         <button type="button" id="lensTabSlit" class="tab-btn" onclick="setLensMode('slit')">Celah Sempit (SN)</button>
         <button type="button" id="lensTabQr" class="tab-btn" onclick="setLensMode('qr')">Kotak QR</button>
       </div>
 
-      <!-- Banner Deteksi Real-Time saat QR/Barcode langsung tertangkap -->
+      <!-- Pemilih Lensa Kamera (Otomatis muncul via Html5Qrcode.getCameras() jika HP punya >1 kamera) -->
+      <div id="camSelectBar" class="cam-select-bar">
+        <select id="lensCameraSelect" onchange="onSwitchCameraDevice()"></select>
+        <button type="button" class="btn btn-outline btn-sm" style="white-space:nowrap; padding:6px 10px;" onclick="cycleNextCamera()">Ganti Lensa</button>
+      </div>
+
+      <!-- Banner Deteksi Real-Time dari Html5Qrcode -->
       <div id="lensLiveToast" class="lens-live-toast">
         <div style="min-width:0; flex:1;">
           <div style="font-size:10.5px; font-weight:700; text-transform:uppercase;" id="lensLiveFormat">QR / BARCODE TERDETEKSI</div>
@@ -969,35 +962,34 @@
         <button type="button" class="btn btn-primary btn-sm" style="width:auto;" onclick="useLiveDetectedCode()">Pakai SN</button>
       </div>
 
-      <!-- Unified Live Camera Viewport dengan Reticle & Bounding Box Canvas -->
-      <div id="lensViewport" class="lens-viewport">
-        <video id="lensVideo" playsinline autoplay muted></video>
-        <canvas id="lensOverlayCanvas" class="lens-overlay-canvas"></canvas>
-        <div id="qrHiddenWorker" style="display:none;"></div>
-        <div id="lensReticle" class="lens-reticle">
-          <div class="lens-corner tl"></div>
-          <div class="lens-corner tr"></div>
-          <div class="lens-corner bl"></div>
-          <div class="lens-corner br"></div>
-          <div class="lens-scan-line"></div>
-        </div>
-        <div id="lensTopPill" class="lens-top-pill">Arahkan ke QR, Barcode, atau Stiker Teks</div>
-        <div class="lens-shutter-bar">
+      <!-- Viewport Utama Html5Qrcode -->
+      <div id="lensViewport" class="h5qr-shell">
+        <div id="lensTopPill" class="h5qr-top-badge">Html5Qrcode Aktif — Arahkan ke QR / Barcode</div>
+        <div id="html5QrReader" onclick="triggerTapRefocus()"></div>
+        <div class="h5qr-bottom-bar">
           <button type="button" id="btnLensTorch" class="btn-lens-mini" style="display:none;" onclick="toggleLensTorch()">Senter</button>
-          <button type="button" id="btnLensCapture" class="btn-lens-shutter" onclick="captureAndAnalyzeLens()">Bidik &amp; Baca Semua</button>
-          <button type="button" class="btn-lens-mini" onclick="stopLensCamera()">Stop</button>
+          <button type="button" id="btnLensFocus" class="btn-lens-mini" style="display:none;" onclick="triggerTapRefocus()">Fokus</button>
+          <button type="button" id="btnLensCapture" class="btn-lens-shutter" onclick="captureAndAnalyzeLens()">Bidik &amp; Baca Teks</button>
+          <button type="button" id="btnLensResume" class="btn-lens-mini" style="display:none;" onclick="resumeLiveScanner()">Lanjut Scan</button>
+          <button type="button" class="btn-lens-mini danger" onclick="stopLensCamera()">Stop</button>
         </div>
       </div>
 
-      <!-- Slider Zoom Kamera Live -->
+      <!-- Kontainer tersembunyi khusus scanFileV2 -->
+      <div id="qrFileHiddenSlot" style="display:none;"></div>
+
+      <!-- Kontrol Hardware Zoom (Html5Qrcode getRunningTrackCameraCapabilities) -->
       <div id="lensZoomControls" class="cam-controls">
-        <span>Zoom:</span>
-        <input type="range" id="lensZoomSlider" min="1" max="4" step="0.2" value="1" oninput="applyLensZoom(this.value)">
-        <span id="lensZoomVal">1.0x</span>
+        <div class="zoom-row">
+          <span style="font-weight:600;">Zoom:</span>
+          <input type="range" id="lensZoomSlider" min="1" max="4" step="0.1" value="1" oninput="applyLensZoom(this.value)">
+          <span id="lensZoomVal" style="font-weight:700; min-width:34px; text-align:right;">1.0x</span>
+        </div>
+        <div id="zoomPresetsRow" class="zoom-presets"></div>
       </div>
 
       <div id="lensNote" class="scan-note">
-        <strong>Smart Lens</strong> otomatis mendeteksi <strong>QR Code, Barcode batang, Serial Number, IMEI, Merk, Model, &amp; MAC Address</strong> sekaligus dari kamera atau foto stiker.
+        Didukung <strong>Html5Qrcode Engine</strong> (QR, Code-128, Code-39, EAN, DataMatrix) + <strong>Denoised OCR</strong> untuk membaca teks Serial Number, Merk, &amp; Model.
       </div>
 
       <!-- Tombol Buka Kamera Live vs Foto Kamera HP / Galeri -->
@@ -1142,14 +1134,17 @@
     let unitSeq = 0;
     let UNIT_PHOTOS = {};
 
-    // State Smart Lens (Unified Google Lens: QR + Barcode + OCR + Smart Entity Extraction)
+    // State Html5Qrcode + Smart Lens (Multi-Camera, ROI Dynamic, Track Capabilities, Pause/Freeze OCR, ScanFileV2)
     let activeSnUid = null;
     let lensMode = 'auto'; // 'auto' | 'slit' | 'qr'
-    let lensStream = null;
+    let html5QrLive = null;
+    let html5QrFile = null;
+    let isHtml5QrScanning = false;
+    let isHtml5QrPaused = false;
+    let availableCameras = [];
+    let selectedCameraId = '';
+    let activeTrackCaps = null;
     let lensTorchOn = false;
-    let lensDetectTimer = null;
-    let nativeBarcodeDetector = null;
-    let html5QrFileInstance = null;
     let lastLiveCode = '';
     let detectedEntities = [];
 
@@ -1853,6 +1848,25 @@
       } catch (e) {}
     }
 
+    function getSupportedBarcodeFormats() {
+      if (typeof Html5QrcodeSupportedFormats === 'undefined') return undefined;
+      return [
+        Html5QrcodeSupportedFormats.QR_CODE,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.CODE_93,
+        Html5QrcodeSupportedFormats.CODABAR,
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.ITF,
+        Html5QrcodeSupportedFormats.DATA_MATRIX,
+        Html5QrcodeSupportedFormats.AZTEC,
+        Html5QrcodeSupportedFormats.PDF_417
+      ];
+    }
+
     function openSnModal(uid, mode) {
       activeSnUid = uid;
       const currentVal = (document.getElementById('sn_' + uid)?.value || '').trim();
@@ -1864,8 +1878,8 @@
       initCropperEventsOnce();
     }
 
-    function closeSnModal() {
-      stopLensCamera();
+    async function closeSnModal() {
+      await stopLensCamera();
       hideCropPanel();
       document.getElementById('snModal').style.display = 'none';
       activeSnUid = null;
@@ -1889,328 +1903,315 @@
       document.getElementById('lensTabSlit').classList.toggle('active', lensMode === 'slit');
       document.getElementById('lensTabQr').classList.toggle('active', lensMode === 'qr');
 
-      const reticle = document.getElementById('lensReticle');
       const pill = document.getElementById('lensTopPill');
-      if (reticle) {
-        reticle.classList.remove('slit', 'square');
-        if (lensMode === 'slit') reticle.classList.add('slit');
-        else if (lensMode === 'qr') reticle.classList.add('square');
-      }
       if (pill) {
-        if (lensMode === 'slit') pill.textContent = 'Sejajarkan 1 baris Serial Number / Barcode di celah';
-        else if (lensMode === 'qr') pill.textContent = 'Posisikan QR Code di dalam kotak tengah';
-        else pill.textContent = 'Auto Lens: QR, Barcode & Teks Label';
+        if (lensMode === 'slit') pill.textContent = 'Celah Sempit: Sejajarkan 1 Baris Barcode / SN';
+        else if (lensMode === 'qr') pill.textContent = 'Kotak QR: Posisikan QR Code di Tengah';
+        else pill.textContent = 'Auto Lens: QR, Barcode Batang & Teks';
       }
 
       if (document.getElementById('sharedCropPanel').style.display === 'block') {
         const preset = lensMode === 'slit' ? 'narrow' : (lensMode === 'qr' ? 'square' : 'full');
         applyCropPreset(preset);
       }
+
+      // Jika kamera Html5Qrcode sedang aktif, restart cepat agar qrbox ROI menyesuaikan mode baru
+      if (isHtml5QrScanning) {
+        stopLensCamera().then(() => startHtml5QrcodeLive());
+      }
     }
 
-    // ---------- LIVE GOOGLE LENS CAMERA (ANDROID MULTI-FALLBACK & DIAGNOSTICS) ----------
-    async function requestAndroidResilientStream() {
-      const constraintsList = [
-        {
-          video: {
-            facingMode: { ideal: 'environment' },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
-          },
-          audio: false
-        },
-        {
-          video: {
-            facingMode: { ideal: 'environment' },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          },
-          audio: false
-        },
-        {
-          video: { facingMode: 'environment' },
-          audio: false
-        },
-        {
-          video: true,
-          audio: false
-        }
-      ];
+    // ---------- MULTI-CAMERA ENUMERATION VIA Html5Qrcode.getCameras() ----------
+    async function populateCameraList() {
+      if (typeof Html5Qrcode === 'undefined' || !Html5Qrcode.getCameras) return [];
+      try {
+        const devices = await Html5Qrcode.getCameras();
+        availableCameras = devices || [];
+        const sel = document.getElementById('lensCameraSelect');
+        const bar = document.getElementById('camSelectBar');
 
-      let lastErr = null;
-      for (const c of constraintsList) {
-        try {
-          return await navigator.mediaDevices.getUserMedia(c);
-        } catch (err) {
-          lastErr = err;
-          // Jika ditolak izin atau protokol tidak aman, tidak perlu coba constraint lain
-          if (err && (err.name === 'NotAllowedError' || err.name === 'SecurityError' || err.name === 'PermissionDeniedError')) {
-            throw err;
+        if (availableCameras.length > 0) {
+          sel.innerHTML = availableCameras.map((cam, idx) => {
+            const label = cam.label || `Kamera #${idx + 1}`;
+            return `<option value="${escapeHtml(cam.id)}">${escapeHtml(label)}</option>`;
+          }).join('');
+
+          // Pilih kamera belakang (back / rear / environment / 0) secara default jika belum dipilih
+          if (!selectedCameraId || !availableCameras.some(c => c.id === selectedCameraId)) {
+            const backCam = availableCameras.find(c => /back|rear|environment|belakang/i.test(c.label || ''))
+              || availableCameras[availableCameras.length - 1];
+            selectedCameraId = backCam.id;
           }
+          sel.value = selectedCameraId;
+          bar.style.display = availableCameras.length > 1 ? 'flex' : 'none';
         }
+        return availableCameras;
+      } catch (e) {
+        return [];
       }
-      throw lastErr || new Error('Gagal mengakses kamera perangkat.');
     }
 
-    function diagnoseAndroidCameraError(err) {
-      const proto = window.location.protocol || '';
-      const ua = navigator.userAgent || '';
-      const isInApp = /FBAN|FBAV|Instagram|WhatsApp|Telegram|Line|wv\)/i.test(ua);
-      const errName = (err && err.name) ? err.name : '';
-      const errMsg = (err && err.message) ? err.message : String(err || '');
-
-      if (!window.isSecureContext || proto === 'file:' || proto === 'content:') {
-        return `
-          <strong style="color:var(--danger);">Live Camera diblokir karena dibuka dari memori lokal (<code>${escapeHtml(proto)}</code>).</strong><br>
-          Android Chrome mewajibkan alamat <code>https://</code> atau <code>http://localhost</code> untuk Live Camera.<br>
-          <strong>Solusi cepat:</strong> Gunakan tombol <strong>"Foto Kamera HP"</strong> di kanan (tetap langsung buka kamera HP), atau host file HTML ini di HTTPS gratis (Netlify Drop / GitHub Pages).
-        `;
+    async function onSwitchCameraDevice() {
+      const sel = document.getElementById('lensCameraSelect');
+      selectedCameraId = sel.value;
+      if (isHtml5QrScanning) {
+        await stopLensCamera();
+        await startHtml5QrcodeLive();
       }
-
-      if (isInApp) {
-        return `
-          <strong style="color:var(--danger);">Browser bawaan aplikasi (WhatsApp/File Viewer) memblokir kamera.</strong><br>
-          Ketuk ikon <strong>titik tiga (&vellip;)</strong> di pojok kanan atas layar &rarr; pilih <strong>"Buka di Chrome / Open in Browser"</strong>.
-        `;
-      }
-
-      if (errName === 'NotAllowedError' || errName === 'PermissionDeniedError') {
-        return `
-          <strong style="color:var(--danger);">Izin Kamera Ditolak (NotAllowedError).</strong><br>
-          1. Ketuk ikon <strong>gembok / pengaturan situs</strong> di sebelah kiri alamat URL Chrome &rarr; <strong>Izin (Permissions) &rarr; Kamera &rarr; Izinkan</strong>.<br>
-          2. Pastikan juga di <strong>Setelan HP &rarr; Aplikasi &rarr; Chrome &rarr; Izin &rarr; Kamera</strong> sudah aktif.
-        `;
-      }
-
-      if (errName === 'NotReadableError' || errName === 'TrackStartError') {
-        return `
-          <strong style="color:var(--danger);">Kamera Sedang Dipakai Aplikasi Lain (NotReadableError).</strong><br>
-          Tutup aplikasi kamera/WhatsApp/scanner lain yang masih berjalan di latar belakang, lalu coba tekan <strong>Buka Kamera Lens</strong> lagi.
-        `;
-      }
-
-      if (errName === 'NotFoundError' || errName === 'DevicesNotFoundError') {
-        return `
-          <strong style="color:var(--danger);">Sensor Kamera Tidak Ditemukan (NotFoundError).</strong><br>
-          Perangkat tidak melaporkan kamera yang aktif ke browser. Silakan gunakan tombol <strong>"Foto Kamera HP"</strong> di samping kanan.
-        `;
-      }
-
-      return `
-        <strong style="color:var(--danger);">Gagal membuka Live Camera (${escapeHtml(errName || 'Error')}):</strong> ${escapeHtml(errMsg)}<br>
-        Gunakan tombol <strong>"Foto Kamera HP"</strong> di samping kanan sebagai jalur alternatif langsung ke aplikasi kamera Android.
-      `;
     }
 
+    async function cycleNextCamera() {
+      if (availableCameras.length < 2) return;
+      const idx = availableCameras.findIndex(c => c.id === selectedCameraId);
+      const nextIdx = (idx + 1) % availableCameras.length;
+      selectedCameraId = availableCameras[nextIdx].id;
+      document.getElementById('lensCameraSelect').value = selectedCameraId;
+      if (isHtml5QrScanning) {
+        await stopLensCamera();
+        await startHtml5QrcodeLive();
+      }
+    }
+
+    // ---------- LIVE SCANNER ENGINE VIA Html5Qrcode ----------
     async function toggleLensCamera() {
-      if (lensStream) {
-        stopLensCamera();
+      if (isHtml5QrScanning) {
+        await stopLensCamera();
         return;
       }
+      await startHtml5QrcodeLive();
+    }
 
+    async function startHtml5QrcodeLive() {
       hideCropPanel();
       resetLensFeedback();
       const btn = document.getElementById('btnStartLensCam');
       const note = document.getElementById('lensNote');
 
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        note.innerHTML = diagnoseAndroidCameraError({ name: 'SecurityError', message: 'navigator.mediaDevices tidak tersedia' });
+      if (typeof Html5Qrcode === 'undefined') {
+        note.innerHTML = `<strong style="color:var(--danger);">Library Html5Qrcode belum termuat.</strong> Periksa koneksi internet Anda lalu muat ulang halaman.`;
+        return;
+      }
+
+      if (!window.isSecureContext || window.location.protocol === 'file:' || window.location.protocol === 'content:') {
+        note.innerHTML = diagnoseAndroidCameraError({ name: 'SecurityError', message: 'Non-secure protocol' });
         return;
       }
 
       try {
         btn.disabled = true;
-        btn.textContent = 'Membuka Smart Lens...';
-        lensStream = await requestAndroidResilientStream();
+        btn.textContent = 'Menyiapkan Html5Qrcode...';
 
-        const video = document.getElementById('lensVideo');
-        video.setAttribute('playsinline', '');
-        video.setAttribute('autoplay', '');
-        video.muted = true;
-        video.srcObject = lensStream;
-        await video.play();
+        // 1. Deteksi daftar kamera fisik perangkat
+        await populateCameraList();
+
+        // 2. Inisialisasi instance Html5Qrcode dengan dukungan semua format 1D/2D + Native BarcodeDetector hybrid
+        if (!html5QrLive) {
+          html5QrLive = new Html5Qrcode('html5QrReader', {
+            formatsToSupport: getSupportedBarcodeFormats(),
+            experimentalFeatures: {
+              useBarCodeDetectorIfSupported: true
+            },
+            verbose: false
+          });
+        }
+
+        // 3. Hitung ROI qrbox dinamis sesuai mode (Auto / Celah Sempit / Kotak QR)
+        const qrboxFn = (viewW, viewH) => {
+          if (lensMode === 'slit') {
+            return {
+              width: Math.max(190, Math.floor(viewW * 0.90)),
+              height: Math.max(56, Math.floor(viewH * 0.24))
+            };
+          }
+          if (lensMode === 'qr') {
+            const side = Math.max(140, Math.floor(Math.min(viewW, viewH) * 0.62));
+            return { width: side, height: side };
+          }
+          // Auto Lens: kotak lebar untuk QR + barcode batang sekaligus
+          return {
+            width: Math.max(190, Math.floor(viewW * 0.86)),
+            height: Math.max(110, Math.floor(viewH * 0.52))
+          };
+        };
+
+        const cameraArg = selectedCameraId ? { deviceId: { exact: selectedCameraId } } : { facingMode: 'environment' };
+        const config = {
+          fps: 15,
+          qrbox: qrboxFn,
+          aspectRatio: 1.45,
+          disableFlip: false,
+          videoConstraints: {
+            ...(selectedCameraId ? { deviceId: { exact: selectedCameraId } } : { facingMode: { ideal: 'environment' } }),
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          }
+        };
 
         document.getElementById('lensViewport').style.display = 'block';
+        document.getElementById('btnLensResume').style.display = 'none';
+        document.getElementById('btnLensCapture').style.display = 'inline-flex';
+
+        await html5QrLive.start(
+          cameraArg,
+          config,
+          (decodedText, decodedResult) => {
+            const clean = String(decodedText || '').trim();
+            if (!clean) return;
+            const fmtName = (decodedResult && decodedResult.result && decodedResult.result.format && decodedResult.result.format.formatName)
+              ? decodedResult.result.format.formatName
+              : 'QR / BARCODE';
+
+            if (clean !== lastLiveCode) {
+              lastLiveCode = clean;
+              playLensFeedback();
+              document.getElementById('lensLiveFormat').textContent = fmtName.toUpperCase() + ' TERDETEKSI';
+              document.getElementById('lensLiveValue').textContent = clean;
+              document.getElementById('lensLiveToast').style.display = 'flex';
+              document.getElementById('snResultInput').value = extractPrimarySnFromCode(clean);
+              buildAndRenderSmartEntities([{ format: fmtName, value: clean }], '');
+            }
+          },
+          () => {}
+        );
+
+        isHtml5QrScanning = true;
+        isHtml5QrPaused = false;
         btn.disabled = false;
         btn.textContent = 'Hentikan Kamera';
-        note.innerHTML = 'QR &amp; Barcode terdeteksi otomatis. Untuk membaca <strong>teks label (Merk, Model, SN)</strong>, tekan <strong>"Bidik &amp; Baca Semua"</strong>.';
+        note.innerHTML = '<strong>Html5Qrcode Aktif:</strong> QR &amp; Barcode terbaca otomatis. Untuk membaca <strong>tulisan teks SN/Merk/Model</strong>, klik <strong>"Bidik &amp; Baca Teks"</strong>.';
 
-        setupLensHardwareControls();
-        startRealtimeBarcodeLoop();
+        // Refresh label kamera setelah izin diberikan & pasang kontrol hardware (Zoom, Torch, Autofocus)
+        await populateCameraList();
+        setupHtml5QrTrackCapabilities();
       } catch (err) {
-        stopLensCamera();
+        await stopLensCamera();
         note.innerHTML = diagnoseAndroidCameraError(err);
       }
     }
 
-    function setupLensHardwareControls() {
+    function setupHtml5QrTrackCapabilities() {
       const ctrl = document.getElementById('lensZoomControls');
       const torchBtn = document.getElementById('btnLensTorch');
+      const focusBtn = document.getElementById('btnLensFocus');
       const slider = document.getElementById('lensZoomSlider');
+      const presetsRow = document.getElementById('zoomPresetsRow');
+
       ctrl.style.display = 'none';
       torchBtn.style.display = 'none';
+      focusBtn.style.display = 'none';
       lensTorchOn = false;
       torchBtn.classList.remove('on');
+      activeTrackCaps = null;
 
       try {
-        const track = lensStream ? lensStream.getVideoTracks()[0] : null;
-        if (!track || !track.getCapabilities) return;
-        const caps = track.getCapabilities();
-        if (caps.zoom) {
-          slider.min = caps.zoom.min || 1;
-          slider.max = Math.min(caps.zoom.max || 4, 5);
-          slider.step = caps.zoom.step || 0.2;
-          slider.value = Math.min(1.4, Number(slider.max));
-          document.getElementById('lensZoomVal').textContent = Number(slider.value).toFixed(1) + 'x';
-          applyLensZoom(slider.value);
+        if (!html5QrLive || !html5QrLive.getRunningTrackCameraCapabilities) return;
+        const caps = html5QrLive.getRunningTrackCameraCapabilities();
+        activeTrackCaps = caps;
+
+        // 1. Zoom Hardware via Html5Qrcode ZoomFeature
+        if (caps && caps.zoomFeature && caps.zoomFeature().isSupported()) {
+          const zf = caps.zoomFeature();
+          const minZ = zf.min() || 1;
+          const maxZ = Math.min(zf.max() || 4, 5);
+          const stepZ = zf.step() || 0.1;
+          const defaultZ = Math.min(1.5, maxZ);
+
+          slider.min = minZ;
+          slider.max = maxZ;
+          slider.step = stepZ;
+          slider.value = defaultZ;
+          document.getElementById('lensZoomVal').textContent = Number(defaultZ).toFixed(1) + 'x';
+          zf.apply(defaultZ);
+
+          const presetVals = [1.0, 1.5, 2.0, 3.0].filter(v => v >= minZ && v <= maxZ);
+          presetsRow.innerHTML = presetVals.map(v =>
+            `<button type="button" class="btn-zoom-pill" onclick="applyLensZoom(${v})">${v.toFixed(1)}x</button>`
+          ).join('');
           ctrl.style.display = 'flex';
         }
-        if (caps.torch) {
+
+        // 2. Torch / Senter Hardware via Html5Qrcode TorchFeature
+        if (caps && caps.torchFeature && caps.torchFeature().isSupported()) {
           torchBtn.style.display = 'inline-block';
         }
-      } catch (e) {}
+
+        // 3. Continuous Autofocus via applyVideoConstraints
+        const videoEl = document.querySelector('#html5QrReader video');
+        const track = videoEl && videoEl.srcObject ? videoEl.srcObject.getVideoTracks()[0] : null;
+        if (track && track.getCapabilities) {
+          const rawCaps = track.getCapabilities();
+          if (rawCaps.focusMode && rawCaps.focusMode.includes('continuous')) {
+            track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+            focusBtn.style.display = 'inline-block';
+          }
+        }
+      } catch (e) {
+        console.warn('Track capabilities notice:', e);
+      }
     }
 
     async function applyLensZoom(val) {
-      document.getElementById('lensZoomVal').textContent = Number(val).toFixed(1) + 'x';
+      const numVal = Number(val);
+      document.getElementById('lensZoomSlider').value = numVal;
+      document.getElementById('lensZoomVal').textContent = numVal.toFixed(1) + 'x';
       try {
-        const track = lensStream ? lensStream.getVideoTracks()[0] : null;
-        if (track) await track.applyConstraints({ advanced: [{ zoom: Number(val) }] });
+        if (activeTrackCaps && activeTrackCaps.zoomFeature && activeTrackCaps.zoomFeature().isSupported()) {
+          await activeTrackCaps.zoomFeature().apply(numVal);
+        } else if (html5QrLive && html5QrLive.applyVideoConstraints) {
+          await html5QrLive.applyVideoConstraints({ advanced: [{ zoom: numVal }] });
+        }
       } catch (e) {}
     }
 
     async function toggleLensTorch() {
       try {
-        const track = lensStream ? lensStream.getVideoTracks()[0] : null;
-        if (!track) return;
-        lensTorchOn = !lensTorchOn;
-        await track.applyConstraints({ advanced: [{ torch: lensTorchOn }] });
-        document.getElementById('btnLensTorch').classList.toggle('on', lensTorchOn);
+        if (activeTrackCaps && activeTrackCaps.torchFeature && activeTrackCaps.torchFeature().isSupported()) {
+          lensTorchOn = !lensTorchOn;
+          await activeTrackCaps.torchFeature().apply(lensTorchOn);
+          document.getElementById('btnLensTorch').classList.toggle('on', lensTorchOn);
+        }
       } catch (e) {}
     }
 
-    function stopLensCamera() {
-      if (lensDetectTimer) {
-        clearInterval(lensDetectTimer);
-        lensDetectTimer = null;
+    async function triggerTapRefocus() {
+      try {
+        const videoEl = document.querySelector('#html5QrReader video');
+        const track = videoEl && videoEl.srcObject ? videoEl.srcObject.getVideoTracks()[0] : null;
+        if (!track || !track.getCapabilities) return;
+        const rawCaps = track.getCapabilities();
+        if (rawCaps.focusMode && rawCaps.focusMode.includes('single-shot')) {
+          await track.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] });
+          setTimeout(() => {
+            if (rawCaps.focusMode.includes('continuous')) {
+              track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+            }
+          }, 600);
+          document.getElementById('lensTopPill').textContent = 'Memfokuskan ulang kamera...';
+          setTimeout(() => setLensMode(lensMode), 900);
+        }
+      } catch (e) {}
+    }
+
+    async function stopLensCamera() {
+      if (html5QrLive && isHtml5QrScanning) {
+        try {
+          await html5QrLive.stop();
+        } catch (e) {}
       }
-      if (lensStream) {
-        lensStream.getTracks().forEach(t => t.stop());
-        lensStream = null;
-      }
+      isHtml5QrScanning = false;
+      isHtml5QrPaused = false;
       lensTorchOn = false;
-      const video = document.getElementById('lensVideo');
-      if (video) video.srcObject = null;
+      activeTrackCaps = null;
+
       const vp = document.getElementById('lensViewport');
       if (vp) vp.style.display = 'none';
       const ctrl = document.getElementById('lensZoomControls');
       if (ctrl) ctrl.style.display = 'none';
-      const overlay = document.getElementById('lensOverlayCanvas');
-      if (overlay) {
-        const ctx = overlay.getContext('2d');
-        ctx.clearRect(0, 0, overlay.width, overlay.height);
-      }
       const btn = document.getElementById('btnStartLensCam');
       if (btn) {
         btn.disabled = false;
         btn.textContent = 'Buka Kamera Lens';
       }
-    }
-
-    function getReticleCropMetrics(videoEl) {
-      const reticle = document.getElementById('lensReticle');
-      const vRect = videoEl.getBoundingClientRect();
-      const rRect = reticle.getBoundingClientRect();
-
-      const dispW = vRect.width;
-      const dispH = vRect.height;
-      const natW = videoEl.videoWidth;
-      const natH = videoEl.videoHeight;
-
-      const scale = Math.max(dispW / natW, dispH / natH);
-      const visW = dispW / scale;
-      const visH = dispH / scale;
-      const offsetX = (natW - visW) / 2;
-      const offsetY = (natH - visH) / 2;
-
-      const sx = Math.max(0, offsetX + ((rRect.left - vRect.left) / scale));
-      const sy = Math.max(0, offsetY + ((rRect.top - vRect.top) / scale));
-      const sw = Math.min(natW - sx, rRect.width / scale);
-      const sh = Math.min(natH - sy, rRect.height / scale);
-
-      return { sx, sy, sw, sh, scale, offsetX, offsetY, dispW, dispH };
-    }
-
-    function startRealtimeBarcodeLoop() {
-      if (lensDetectTimer) clearInterval(lensDetectTimer);
-
-      if ('BarcodeDetector' in window && !nativeBarcodeDetector) {
-        try {
-          nativeBarcodeDetector = new BarcodeDetector({
-            formats: ['qr_code', 'code_128', 'code_39', 'code_93', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'itf', 'codabar', 'data_matrix', 'pdf417']
-          });
-        } catch (e) {
-          nativeBarcodeDetector = null;
-        }
-      }
-
-      const probeCanvas = document.createElement('canvas');
-      let busy = false;
-
-      lensDetectTimer = setInterval(async () => {
-        if (!lensStream || busy) return;
-        const video = document.getElementById('lensVideo');
-        if (!video || !video.videoWidth || video.readyState < 2) return;
-
-        busy = true;
-        try {
-          const m = getReticleCropMetrics(video);
-          probeCanvas.width = Math.round(m.sw);
-          probeCanvas.height = Math.round(m.sh);
-          const pCtx = probeCanvas.getContext('2d');
-          pCtx.drawImage(video, m.sx, m.sy, m.sw, m.sh, 0, 0, probeCanvas.width, probeCanvas.height);
-
-          const overlay = document.getElementById('lensOverlayCanvas');
-          overlay.width = Math.round(m.dispW);
-          overlay.height = Math.round(m.dispH);
-          const oCtx = overlay.getContext('2d');
-          oCtx.clearRect(0, 0, overlay.width, overlay.height);
-
-          if (nativeBarcodeDetector) {
-            const barcodes = await nativeBarcodeDetector.detect(probeCanvas);
-            if (barcodes && barcodes.length > 0) {
-              const best = barcodes[0];
-              const rawVal = (best.rawValue || '').trim();
-              if (rawVal) {
-                if (best.boundingBox) {
-                  const bx = ((m.sx + best.boundingBox.x) - m.offsetX) * m.scale;
-                  const by = ((m.sy + best.boundingBox.y) - m.offsetY) * m.scale;
-                  const bw = best.boundingBox.width * m.scale;
-                  const bh = best.boundingBox.height * m.scale;
-                  oCtx.strokeStyle = '#34d399';
-                  oCtx.lineWidth = 3;
-                  oCtx.fillStyle = 'rgba(52, 211, 153, 0.16)';
-                  oCtx.beginPath();
-                  oCtx.roundRect ? oCtx.roundRect(bx, by, bw, bh, 6) : oCtx.rect(bx, by, bw, bh);
-                  oCtx.fill();
-                  oCtx.stroke();
-                }
-
-                if (rawVal !== lastLiveCode) {
-                  lastLiveCode = rawVal;
-                  playLensFeedback();
-                  document.getElementById('lensLiveFormat').textContent = (best.format || 'QR / BARCODE').toUpperCase() + ' TERDETEKSI';
-                  document.getElementById('lensLiveValue').textContent = rawVal;
-                  document.getElementById('lensLiveToast').style.display = 'flex';
-                  document.getElementById('snResultInput').value = extractPrimarySnFromCode(rawVal);
-                  buildAndRenderSmartEntities([{ format: best.format || 'QR/Barcode', value: rawVal }], '');
-                }
-              }
-            }
-          }
-        } catch (e) {}
-        busy = false;
-      }, 240);
     }
 
     function useLiveDetectedCode() {
@@ -2220,18 +2221,57 @@
       }
     }
 
+    // Freeze frame langsung dari video Html5Qrcode menggunakan html5QrLive.pause(true) lalu baca ROI + OCR!
     async function captureAndAnalyzeLens() {
-      const video = document.getElementById('lensVideo');
+      const video = document.querySelector('#html5QrReader video');
       if (!video || !video.videoWidth) return;
 
-      const m = getReticleCropMetrics(video);
-      const rawCanvas = document.createElement('canvas');
-      rawCanvas.width = Math.round(m.sw);
-      rawCanvas.height = Math.round(m.sh);
-      rawCanvas.getContext('2d').drawImage(video, m.sx, m.sy, m.sw, m.sh, 0, 0, rawCanvas.width, rawCanvas.height);
+      // Hitung ROI sesuai mode aktif pada video Html5Qrcode
+      const natW = video.videoWidth;
+      const natH = video.videoHeight;
+      let sw = natW;
+      let sh = natH;
+      if (lensMode === 'slit') {
+        sw = Math.round(natW * 0.90);
+        sh = Math.max(64, Math.round(natH * 0.26));
+      } else if (lensMode === 'qr') {
+        const s = Math.round(Math.min(natW, natH) * 0.65);
+        sw = s;
+        sh = s;
+      } else {
+        sw = Math.round(natW * 0.88);
+        sh = Math.round(natH * 0.56);
+      }
+      const sx = Math.max(0, Math.round((natW - sw) / 2));
+      const sy = Math.max(0, Math.round((natH - sh) / 2));
 
-      stopLensCamera();
+      const rawCanvas = document.createElement('canvas');
+      rawCanvas.width = sw;
+      rawCanvas.height = sh;
+      rawCanvas.getContext('2d').drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+
+      // Pause/bekukan video live agar pengguna melihat frame yang dibidik & bisa resume kapan saja
+      if (html5QrLive && isHtml5QrScanning && !isHtml5QrPaused) {
+        try {
+          html5QrLive.pause(true);
+          isHtml5QrPaused = true;
+          document.getElementById('btnLensResume').style.display = 'inline-block';
+          document.getElementById('lensTopPill').textContent = 'Frame Dibekukan — Memproses Teks & Kode...';
+        } catch (e) {}
+      }
+
       await runUnifiedLensPipeline(rawCanvas, lensMode === 'slit' ? 7 : 6);
+    }
+
+    function resumeLiveScanner() {
+      if (html5QrLive && isHtml5QrScanning && isHtml5QrPaused) {
+        try {
+          html5QrLive.resume();
+          isHtml5QrPaused = false;
+          document.getElementById('btnLensResume').style.display = 'none';
+          setLensMode(lensMode);
+        } catch (e) {}
+      }
     }
 
     // ---------- PHOTO UPLOAD + INTERACTIVE LENS CROPPER ----------
@@ -2295,12 +2335,12 @@
       window.addEventListener('pointerup', onPointerUp);
     }
 
-    function loadPhotoToLens(event) {
+    async function loadPhotoToLens(event) {
       const file = event.target.files[0];
       event.target.value = '';
       if (!file) return;
 
-      stopLensCamera();
+      await stopLensCamera();
       resetLensFeedback();
 
       const reader = new FileReader();
@@ -2368,8 +2408,56 @@
       await runUnifiedLensPipeline(rawCanvas, psm);
     }
 
-    // ---------- UNIFIED PIPELINE: DECODE BARCODES/QR + DENOISED MULTI-PASS OCR ----------
-    async function decodeCodesFromCanvas(sourceCanvas) {
+    // ---------- MULTI-ANGLE & HIGH-CONTRAST SCANNING VIA Html5Qrcode.scanFileV2() ----------
+    function rotateCanvas(sourceCanvas, angleDeg) {
+      if (angleDeg === 0) return sourceCanvas;
+      const rad = (angleDeg * Math.PI) / 180;
+      const swap = angleDeg === 90 || angleDeg === 270;
+      const c = document.createElement('canvas');
+      c.width = swap ? sourceCanvas.height : sourceCanvas.width;
+      c.height = swap ? sourceCanvas.width : sourceCanvas.height;
+      const ctx = c.getContext('2d');
+      ctx.translate(c.width / 2, c.height / 2);
+      ctx.rotate(rad);
+      ctx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2);
+      return c;
+    }
+
+    async function tryHtml5QrScanCanvas(canvasToScan) {
+      if (typeof Html5Qrcode === 'undefined') return null;
+      if (!html5QrFile) {
+        html5QrFile = new Html5Qrcode('qrFileHiddenSlot', {
+          formatsToSupport: getSupportedBarcodeFormats(),
+          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+          verbose: false
+        });
+      }
+
+      const pad = 28;
+      const qCanvas = document.createElement('canvas');
+      qCanvas.width = canvasToScan.width + pad * 2;
+      qCanvas.height = canvasToScan.height + pad * 2;
+      const qCtx = qCanvas.getContext('2d');
+      qCtx.fillStyle = '#ffffff';
+      qCtx.fillRect(0, 0, qCanvas.width, qCanvas.height);
+      qCtx.drawImage(canvasToScan, pad, pad);
+
+      const blob = await new Promise(resolve => qCanvas.toBlob(resolve, 'image/png'));
+      const file = new File([blob], 'h5qr_probe.png', { type: 'image/png' });
+
+      if (html5QrFile.scanFileV2) {
+        const res = await html5QrFile.scanFileV2(file, false);
+        const fmt = (res && res.result && res.result.format && res.result.format.formatName)
+          ? res.result.format.formatName
+          : 'QR / BARCODE';
+        return { format: fmt, value: String(res.decodedText || '').trim() };
+      } else {
+        const text = await html5QrFile.scanFile(file, false);
+        return { format: 'QR / BARCODE', value: String(text || '').trim() };
+      }
+    }
+
+    async function decodeCodesFromCanvas(sourceCanvas, binCanvas) {
       const found = [];
       const pushUnique = (format, value) => {
         const clean = String(value || '').trim();
@@ -2378,51 +2466,23 @@
         }
       };
 
-      if ('BarcodeDetector' in window) {
+      // 1. Coba orientasi normal (0°) & rotasi 90° (untuk barcode vertikal pada samping dus/perangkat)
+      for (const angle of [0, 90]) {
         try {
-          if (!nativeBarcodeDetector) {
-            nativeBarcodeDetector = new BarcodeDetector({
-              formats: ['qr_code', 'code_128', 'code_39', 'code_93', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'itf', 'codabar', 'data_matrix', 'pdf417']
-            });
+          const rot = rotateCanvas(sourceCanvas, angle);
+          const res = await tryHtml5QrScanCanvas(rot);
+          if (res && res.value) {
+            pushUnique(res.format, res.value);
+            break;
           }
-          const res = await nativeBarcodeDetector.detect(sourceCanvas);
-          (res || []).forEach(b => pushUnique(b.format, b.rawValue));
         } catch (e) {}
       }
 
-      if (found.length === 0 && typeof Html5Qrcode !== 'undefined') {
+      // 2. Fallback: coba pada hasil Otsu High-Contrast Binarized jika barcode pudar/kurang kontras
+      if (found.length === 0 && binCanvas) {
         try {
-          if (!html5QrFileInstance) {
-            html5QrFileInstance = new Html5Qrcode('qrHiddenWorker', {
-              formatsToSupport: [
-                Html5QrcodeSupportedFormats.QR_CODE,
-                Html5QrcodeSupportedFormats.CODE_128,
-                Html5QrcodeSupportedFormats.CODE_39,
-                Html5QrcodeSupportedFormats.CODE_93,
-                Html5QrcodeSupportedFormats.CODABAR,
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.UPC_A,
-                Html5QrcodeSupportedFormats.UPC_E,
-                Html5QrcodeSupportedFormats.ITF,
-                Html5QrcodeSupportedFormats.DATA_MATRIX,
-                Html5QrcodeSupportedFormats.PDF_417
-              ]
-            });
-          }
-          const pad = 28;
-          const qCanvas = document.createElement('canvas');
-          qCanvas.width = sourceCanvas.width + pad * 2;
-          qCanvas.height = sourceCanvas.height + pad * 2;
-          const qCtx = qCanvas.getContext('2d');
-          qCtx.fillStyle = '#ffffff';
-          qCtx.fillRect(0, 0, qCanvas.width, qCanvas.height);
-          qCtx.drawImage(sourceCanvas, pad, pad);
-
-          const blob = await new Promise(resolve => qCanvas.toBlob(resolve, 'image/png'));
-          const f = new File([blob], 'lens_scan.png', { type: 'image/png' });
-          const text = await html5QrFileInstance.scanFile(f, false);
-          pushUnique('QR / BARCODE', text);
+          const resBin = await tryHtml5QrScanCanvas(binCanvas);
+          if (resBin && resBin.value) pushUnique(resBin.format, resBin.value);
         } catch (e) {}
       }
 
@@ -2520,14 +2580,12 @@
         }
       }
 
-      // Cek apakah background gelap dengan teks terang (auto-invert jika mayoritas piksel di bawah threshold)
       let darkCount = 0;
       for (let p = 0; p < total; p++) {
         if (smooth[p] <= thresh) darkCount++;
       }
       const invert = darkCount > total * 0.62;
 
-      // Canvas A: Binarized Otsu (teks hitam tajam di atas putih bersih)
       const binCanvas = document.createElement('canvas');
       binCanvas.width = dw + pad * 2;
       binCanvas.height = dh + pad * 2;
@@ -2537,7 +2595,6 @@
       const bImg = bCtx.createImageData(dw, dh);
       const bd = bImg.data;
 
-      // Canvas B: Denoised Grayscale (cadangan jika binarization terlalu tipis)
       const grayCanvas = document.createElement('canvas');
       grayCanvas.width = dw + pad * 2;
       grayCanvas.height = dh + pad * 2;
@@ -2570,15 +2627,14 @@
 
       progWrap.style.display = 'block';
       progBar.style.width = '12%';
-      statusEl.textContent = 'Smart Lens memindai QR, Barcode, dan membersihkan tekstur label...';
-
-      const codes = await decodeCodesFromCanvas(rawCanvas);
-      progBar.style.width = '30%';
+      statusEl.textContent = 'Html5Qrcode & Smart Lens memindai QR, Barcode, dan membersihkan tekstur label...';
 
       const { binCanvas, grayCanvas } = buildDenoisedOcrVariants(rawCanvas);
-      // Tampilkan versi bersih hitam-putih pada pratinjau agar pengguna melihat hasil pembersihan noise
       document.getElementById('croppedStripImg').src = binCanvas.toDataURL('image/png');
       document.getElementById('croppedStripWrap').style.display = 'block';
+
+      const codes = await decodeCodesFromCanvas(rawCanvas, binCanvas);
+      progBar.style.width = '35%';
 
       let rawOcrText = '';
       if (typeof Tesseract !== 'undefined') {
@@ -2587,7 +2643,7 @@
           worker = await Tesseract.createWorker('eng', 1, {
             logger: m => {
               if (m.status === 'recognizing text') {
-                const pct = 30 + Math.round((m.progress || 0) * 50);
+                const pct = 35 + Math.round((m.progress || 0) * 45);
                 progBar.style.width = pct + '%';
                 statusEl.textContent = 'Membaca karakter Serial Number & teks... ' + pct + '%';
               } else if (m.status) {
@@ -2596,14 +2652,12 @@
             }
           });
 
-          // Pass 1: Otsu Binarized Clean Image dengan PSM 6 (blok teks seragam)
           await worker.setParameters({
             tessedit_pageseg_mode: '6'
           });
           const res1 = await worker.recognize(binCanvas.toDataURL('image/png'));
           rawOcrText = (res1 && res1.data && res1.data.text) ? res1.data.text.trim() : '';
 
-          // Pass 2 (Fallback otomatis): Jika Pass 1 kosong atau belum menangkap SN, coba Denoised Grayscale + PSM 11 (Sparse Text)
           const hasValidSn = /(?:S\/N|SIN|5\/N|SN|SERIAL|IMEI|[A-Z0-9]{6,})/i.test(rawOcrText);
           if (!rawOcrText || !hasValidSn) {
             progBar.style.width = '85%';
@@ -2634,7 +2688,7 @@
       buildAndRenderSmartEntities(codes, rawOcrText);
 
       if (detectedEntities.length > 0) {
-        statusEl.textContent = `Selesai! Smart Lens menemukan ${detectedEntities.length} informasi. Ketuk tombol pada item atau klik "Terapkan Semua".`;
+        statusEl.textContent = `Selesai! Terdeteksi ${detectedEntities.length} informasi. Ketuk tombol pada item atau klik "Terapkan Semua".`;
       } else if (rawOcrText.trim()) {
         statusEl.textContent = 'Teks terbaca (lihat kotak Teks Lengkap di bawah).';
       } else {
@@ -2905,6 +2959,44 @@
         if (target) target.value = val;
       }
       closeSnModal();
+    }
+
+    // ---------- DIAGNOSTIK ERROR KAMERA ANDROID ----------
+    function diagnoseAndroidCameraError(err) {
+      const proto = window.location.protocol || '';
+      const ua = navigator.userAgent || '';
+      const isInApp = /FBAN|FBAV|Instagram|WhatsApp|Telegram|Line|wv\)/i.test(ua);
+      const errName = (err && err.name) ? err.name : '';
+      const errMsg = (err && err.message) ? err.message : String(err || '');
+
+      if (!window.isSecureContext || proto === 'file:' || proto === 'content:') {
+        return `
+          <strong style="color:var(--danger);">Live Camera diblokir karena dibuka dari memori lokal (<code>${escapeHtml(proto)}</code>).</strong><br>
+          Buka lewat link HTTPS GitHub Pages Anda agar Live Camera aktif, atau gunakan tombol <strong>"Foto Kamera HP"</strong> di sebelah kanan.
+        `;
+      }
+      if (isInApp) {
+        return `
+          <strong style="color:var(--danger);">Browser bawaan aplikasi memblokir kamera.</strong><br>
+          Ketuk ikon <strong>titik tiga (&vellip;)</strong> di pojok kanan atas &rarr; pilih <strong>"Buka di Chrome / Open in Browser"</strong>.
+        `;
+      }
+      if (errName === 'NotAllowedError' || errName === 'PermissionDeniedError') {
+        return `
+          <strong style="color:var(--danger);">Izin Kamera Ditolak (NotAllowedError).</strong><br>
+          Ketuk ikon <strong>gembok / pengaturan situs</strong> di kiri URL Chrome &rarr; <strong>Izin &rarr; Kamera &rarr; Izinkan</strong>.
+        `;
+      }
+      if (errName === 'NotReadableError' || errName === 'TrackStartError') {
+        return `
+          <strong style="color:var(--danger);">Kamera Sedang Dipakai Aplikasi Lain (NotReadableError).</strong><br>
+          Tutup aplikasi kamera lain di latar belakang lalu tekan <strong>Buka Kamera Lens</strong> lagi.
+        `;
+      }
+      return `
+        <strong style="color:var(--danger);">Gagal membuka kamera (${escapeHtml(errName || 'Error')}):</strong> ${escapeHtml(errMsg)}<br>
+        Gunakan tombol <strong>"Foto Kamera HP"</strong> di samping kanan sebagai alternatif langsung.
+      `;
     }
 
     // ======================================================
