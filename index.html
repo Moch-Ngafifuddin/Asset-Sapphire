@@ -1,0 +1,3020 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Inventaris Aset — Sapphire Grup</title>
+  <!-- Library Scanner QR/Barcode (1D & 2D) dan OCR Ekstrak Teks SN -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
+  <style>
+    :root {
+      --primary: #1b365d;
+      --primary-light: #2b4c7e;
+      --accent: #b8860b;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --border: #dce2ec;
+      --text: #1e293b;
+      --muted: #64748b;
+      --danger: #c0392b;
+      --ok: #15803d;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); padding-bottom: 94px; }
+
+    /* Header */
+    header {
+      background: var(--primary);
+      color: #fff;
+      padding: 13px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+    }
+    .header-inner {
+      max-width: 1320px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    header h1 { margin: 0; font-size: 17px; letter-spacing: 0.2px; }
+    header p { margin: 2px 0 0; font-size: 11.5px; opacity: 0.85; }
+    .header-right { display: flex; align-items: center; gap: 8px; }
+    .badge-status {
+      font-size: 11.5px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+      background: rgba(255,255,255,0.18);
+      cursor: pointer;
+      white-space: nowrap;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    /* Container & Responsive Layout */
+    .container { max-width: 760px; margin: 14px auto; padding: 0 12px; }
+    .layout-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    .desktop-action-card { display: none; }
+
+    /* Cards */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 15px;
+      margin-bottom: 14px;
+      box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+    }
+    .card-title {
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--primary);
+      margin: 0 0 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    /* Grids inside Cards */
+    .grid-2 { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 560px) {
+      .grid-2 { grid-template-columns: 1fr 1fr; }
+      .grid-3 { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* Form Controls */
+    .field { margin-bottom: 10px; position: relative; }
+    .field:last-child { margin-bottom: 0; }
+    label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #475569; }
+    .helper-text { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.35; }
+    input, select, textarea {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      font-size: 14px;
+      background: #fff;
+      color: var(--text);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(27, 54, 93, 0.12);
+    }
+    .row-inline { display: flex; gap: 8px; align-items: center; }
+
+    /* Searchable Employee Combobox */
+    .combo-wrap { position: relative; flex: 1; }
+    .combo-input-wrap { position: relative; display: flex; align-items: center; }
+    .combo-input-wrap input { padding-right: 32px; }
+    .combo-clear {
+      position: absolute;
+      right: 6px;
+      background: #e2e8f0;
+      color: #475569;
+      border: none;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      font-size: 14px;
+      line-height: 1;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .combo-clear:hover { background: #cbd5e1; color: #0f172a; }
+    .combo-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(15,23,42,0.14);
+      max-height: 260px;
+      overflow-y: auto;
+      z-index: 40;
+      display: none;
+    }
+    .combo-item {
+      padding: 9px 11px;
+      cursor: pointer;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 13px;
+    }
+    .combo-item:last-child { border-bottom: none; }
+    .combo-item:hover, .combo-item.active { background: #eff6ff; }
+    .combo-item-title { font-weight: 600; color: #0f172a; display: flex; justify-content: space-between; gap: 6px; }
+    .combo-item-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .combo-tag {
+      font-size: 10px;
+      background: #e2e8f0;
+      color: #334155;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .combo-selected-pill {
+      margin-top: 6px;
+      font-size: 11.5px;
+      padding: 6px 9px;
+      border-radius: 6px;
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      color: #0369a1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .combo-selected-pill.umum {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+      color: #475569;
+    }
+
+    /* Serial Number Row with Scan Buttons */
+    .sn-group { display: flex; gap: 6px; align-items: stretch; }
+    .sn-group input { flex: 1; min-width: 0; }
+    .btn-sn {
+      padding: 0 10px;
+      border-radius: 7px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .btn-sn:hover { background: #e0e7ff; border-color: var(--primary); }
+    .btn-sn.ocr { color: #92400e; background: #fffbeb; border-color: #fcd34d; }
+    .btn-sn.ocr:hover { background: #fef3c7; }
+
+    /* Buttons */
+    .btn {
+      border: none;
+      border-radius: 7px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: opacity 0.15s, background 0.15s;
+    }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: #fff; width: 100%; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-light); }
+    .btn-outline { background: #fff; border: 1.5px solid var(--primary); color: var(--primary); }
+    .btn-outline:hover:not(:disabled) { background: #f0f4fa; }
+    .btn-accent { background: var(--accent); color: #fff; white-space: nowrap; }
+    .btn-danger { background: #fee2e2; color: var(--danger); padding: 6px 10px; font-size: 12px; }
+    .btn-sm { padding: 7px 11px; font-size: 12.5px; }
+
+    /* Photo Section */
+    .photo-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn-cam { background: #e2e8f0; color: #0f172a; border: 1.5px dashed #64748b; width: 100%; padding: 10px 8px; font-size: 13px; }
+    .btn-gal { background: #f8fafc; color: var(--primary); border: 1.5px dashed var(--primary); width: 100%; padding: 10px 8px; font-size: 13px; }
+    .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; margin-top: 10px; }
+    .photo-item { position: relative; border-radius: 7px; overflow: hidden; border: 1px solid var(--border); aspect-ratio: 1 / 1; background: #0f172a; }
+    .photo-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .photo-num { position: absolute; bottom: 4px; left: 4px; background: rgba(15,23,42,0.78); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+    .photo-del { position: absolute; top: 4px; right: 4px; background: rgba(192,57,43,0.92); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 13px; font-weight: 700; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .photo-count-badge { font-size: 11px; font-weight: 600; color: var(--primary); background: #e0e7ff; padding: 2px 8px; border-radius: 999px; }
+
+    /* Mobile Fixed Footer */
+    .footer-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border-top: 1px solid var(--border);
+      padding: 10px 14px;
+      display: flex;
+      justify-content: center;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.07);
+      z-index: 25;
+    }
+    .footer-inner { width: 100%; max-width: 760px; display: flex; gap: 10px; }
+
+    /* Alerts & API Bar */
+    .alert { padding: 12px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 13px; display: none; line-height: 1.45; }
+    .alert-ok { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .alert-err { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .alert-warn { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+    .api-bar { background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 9px; padding: 12px; margin-bottom: 14px; font-size: 12.5px; }
+    details summary { font-size: 12px; color: var(--primary); cursor: pointer; font-weight: 600; margin: 6px 0; user-select: none; }
+
+    /* Modals */
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,0.62);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 60;
+      padding: 14px;
+    }
+    .modal {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+    }
+
+    /* Google Lens Smart Scanner UI & Interactive Cropper */
+    .lens-mode-tabs {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr 1fr;
+      gap: 5px;
+      margin-bottom: 10px;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 9px;
+    }
+    .tab-btn {
+      border: none;
+      background: transparent;
+      padding: 7px 6px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .tab-btn.active {
+      background: #fff;
+      color: var(--primary);
+      box-shadow: 0 1px 4px rgba(15,23,42,0.12);
+    }
+
+    /* Unified Google Lens Live Viewfinder */
+    .lens-viewport {
+      position: relative;
+      width: 100%;
+      height: 265px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #0b1220;
+      display: none;
+      margin-bottom: 8px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+    }
+    .lens-viewport video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .lens-overlay-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .lens-reticle {
+      position: absolute;
+      left: 10%;
+      width: 80%;
+      top: 50%;
+      height: 155px;
+      transform: translateY(-50%);
+      border-radius: 12px;
+      box-shadow: 0 0 0 9999px rgba(11, 18, 32, 0.42);
+      pointer-events: none;
+      z-index: 3;
+      transition: all 0.2s ease;
+    }
+    .lens-reticle.slit {
+      left: 6%;
+      width: 88%;
+      height: 58px;
+      border-radius: 8px;
+      box-shadow: 0 0 0 9999px rgba(11, 18, 32, 0.68);
+    }
+    .lens-reticle.square {
+      left: 22%;
+      width: 56%;
+      height: 165px;
+      box-shadow: 0 0 0 9999px rgba(11, 18, 32, 0.58);
+    }
+    .lens-corner {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-color: #ffffff;
+      border-style: solid;
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.6));
+    }
+    .lens-corner.tl { top: -2px; left: -2px; border-width: 3.5px 0 0 3.5px; border-top-left-radius: 10px; }
+    .lens-corner.tr { top: -2px; right: -2px; border-width: 3.5px 3.5px 0 0; border-top-right-radius: 10px; }
+    .lens-corner.bl { bottom: -2px; left: -2px; border-width: 0 0 3.5px 3.5px; border-bottom-left-radius: 10px; }
+    .lens-corner.br { bottom: -2px; right: -2px; border-width: 0 3.5px 3.5px 0; border-bottom-right-radius: 10px; }
+
+    .lens-scan-line {
+      position: absolute;
+      left: 6px;
+      right: 6px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #38bdf8, #a5f3fc, #38bdf8, transparent);
+      box-shadow: 0 0 8px #38bdf8;
+      animation: lensSweep 2.4s ease-in-out infinite;
+    }
+    @keyframes lensSweep {
+      0%, 100% { top: 10%; opacity: 0.35; }
+      50% { top: 88%; opacity: 0.95; }
+    }
+
+    .lens-top-pill {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.78);
+      backdrop-filter: blur(6px);
+      color: #f8fafc;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.16);
+      white-space: nowrap;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .lens-shutter-bar {
+      position: absolute;
+      bottom: 10px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      z-index: 5;
+    }
+    .btn-lens-shutter {
+      background: rgba(255, 255, 255, 0.96);
+      color: var(--primary);
+      border: 3px solid #38bdf8;
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-lens-shutter:active { transform: scale(0.97); }
+    .btn-lens-mini {
+      background: rgba(15, 23, 42, 0.78);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-lens-mini.on { background: #f59e0b; border-color: #fbbf24; color: #fff; }
+
+    .lens-live-toast {
+      display: none;
+      background: #ecfdf5;
+      border: 1.5px solid #34d399;
+      border-radius: 8px;
+      padding: 8px 11px;
+      margin-bottom: 8px;
+      font-size: 12.5px;
+      color: #065f46;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .scan-note {
+      font-size: 11.5px;
+      color: #475569;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      padding: 8px 10px;
+      margin: 6px 0 8px;
+      line-height: 1.4;
+    }
+
+    .cam-controls {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      padding: 6px 10px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    .cam-controls input[type="range"] { flex: 1; padding: 0; border: none; background: transparent; box-shadow: none; }
+
+    /* Interactive Spotlight Cropper */
+    .crop-panel {
+      display: none;
+      margin-top: 8px;
+      padding: 10px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 9px;
+    }
+    .crop-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .crop-stage-outer {
+      text-align: center;
+      background: #0f172a;
+      border-radius: 7px;
+      padding: 4px;
+      overflow: hidden;
+    }
+    .crop-img-wrap {
+      position: relative;
+      display: inline-block;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      max-width: 100%;
+      vertical-align: middle;
+    }
+    .crop-img-wrap img {
+      display: block;
+      max-width: 100%;
+      max-height: 260px;
+      pointer-events: none;
+      user-select: none;
+    }
+    .crop-box {
+      position: absolute;
+      border: 2px solid #38bdf8;
+      box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.62);
+      cursor: move;
+      touch-action: none;
+    }
+    .crop-handle {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      touch-action: none;
+      z-index: 5;
+    }
+    .crop-handle::after {
+      content: "";
+      position: absolute;
+      width: 11px;
+      height: 11px;
+      background: #38bdf8;
+      border: 2px solid #fff;
+      border-radius: 2px;
+    }
+    .crop-handle.nw { top: -11px; left: -11px; cursor: nwse-resize; }
+    .crop-handle.nw::after { top: 6px; left: 6px; }
+    .crop-handle.ne { top: -11px; right: -11px; cursor: nesw-resize; }
+    .crop-handle.ne::after { top: 6px; right: 6px; }
+    .crop-handle.sw { bottom: -11px; left: -11px; cursor: nesw-resize; }
+    .crop-handle.sw::after { bottom: 6px; left: 6px; }
+    .crop-handle.se { bottom: -11px; right: -11px; cursor: nwse-resize; }
+    .crop-handle.se::after { bottom: 6px; right: 6px; }
+
+    .crop-presets {
+      display: flex;
+      gap: 5px;
+      margin: 8px 0;
+      flex-wrap: wrap;
+    }
+    .crop-preset-btn {
+      flex: 1;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: #334155;
+      border-radius: 6px;
+      padding: 5px 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .crop-preset-btn:hover { background: #e0e7ff; border-color: var(--primary); color: var(--primary); }
+
+    .cropped-strip-wrap {
+      display: none;
+      margin-top: 8px;
+      padding: 6px 8px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+    }
+    .cropped-strip-wrap img {
+      display: block;
+      max-width: 100%;
+      max-height: 76px;
+      margin: 4px auto 0;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      background: #fff;
+    }
+
+    .progress-wrap { background: #e2e8f0; border-radius: 999px; height: 7px; overflow: hidden; margin: 8px 0 4px; display: none; }
+    .progress-bar { background: linear-gradient(90deg, var(--primary), #0284c7); height: 100%; width: 0%; transition: width 0.2s; }
+
+    /* Google Lens Smart Entity Cards & Chips */
+    .lens-results-panel {
+      display: none;
+      margin-top: 10px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 9px;
+      padding: 10px;
+    }
+    .lens-results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .lens-results-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+    .btn-apply-all {
+      background: #15803d;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-apply-all:hover { background: #166534; }
+
+    .lens-entity-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .lens-entity-row {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 7px;
+      padding: 7px 9px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .lens-entity-info { min-width: 0; flex: 1; }
+    .lens-entity-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 1px 6px;
+      border-radius: 4px;
+      margin-bottom: 2px;
+    }
+    .tag-qr { background: #dcfce7; color: #166534; }
+    .tag-sn { background: #dbeafe; color: #1e40af; }
+    .tag-brand { background: #fef3c7; color: #92400e; }
+    .tag-model { background: #f3e8ff; color: #6b21a8; }
+    .tag-spec { background: #e0f2fe; color: #0369a1; }
+    .tag-url { background: #fce7f3; color: #9d174d; }
+
+    .lens-entity-val {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      word-break: break-all;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .lens-entity-actions {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .btn-chip-act {
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: var(--primary);
+      border-radius: 5px;
+      padding: 4px 7px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-chip-act:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-chip-act.applied { background: #dcfce7; color: #166534; border-color: #86efac; }
+
+    .lens-raw-box {
+      margin-top: 8px;
+      border-top: 1px dashed #cbd5e1;
+      padding-top: 7px;
+    }
+    .lens-raw-text {
+      width: 100%;
+      font-size: 11.5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 6px 8px;
+      min-height: 48px;
+      max-height: 95px;
+      color: #334155;
+    }
+    .btn-lens-card {
+      background: linear-gradient(135deg, #1b365d, #0284c7);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ======================================================
+       DESKTOP / LAPTOP RESPONSIVE UI (>= 960px)
+       ====================================================== */
+    @media (min-width: 960px) {
+      body { padding-bottom: 36px; }
+      header { padding: 14px 24px; }
+      header h1 { font-size: 19px; }
+      .container { max-width: 1320px; margin: 20px auto; padding: 0 24px; }
+
+      .layout-grid {
+        grid-template-columns: 390px minmax(0, 1fr);
+        gap: 20px;
+        align-items: start;
+      }
+      .sidebar-col {
+        position: sticky;
+        top: 78px;
+      }
+      .desktop-action-card {
+        display: block;
+      }
+      .footer-bar {
+        display: none;
+      }
+      .grid-3 {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+      .summary-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .stat-box {
+        background: #f8fafc;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px;
+        text-align: center;
+      }
+      .stat-val { font-size: 22px; font-weight: 800; color: var(--primary); line-height: 1.1; }
+      .stat-lbl { font-size: 11px; color: var(--muted); margin-top: 3px; font-weight: 600; }
+      .desktop-btn-stack { display: flex; flex-direction: column; gap: 8px; }
+      .photo-grid { grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); }
+    }
+
+    @media (min-width: 1240px) {
+      .layout-grid {
+        grid-template-columns: 410px minmax(0, 1fr);
+        gap: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div>
+        <h1>Inventaris Aset — Sapphire Grup</h1>
+        <p>Multi-Unit, Google Lens Scanner (QR, Barcode &amp; Teks), Multi-Foto ke Google Drive</p>
+      </div>
+      <div class="header-right">
+        <span id="connBadge" class="badge-status" onclick="toggleApiBox()">Atur URL &amp; PIN</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div id="alertBox" class="alert"></div>
+
+    <!-- Pengaturan URL Web App & PIN Tim IT (Disimpan Permanen di Browser Perangkat) -->
+    <div id="apiConfigBox" class="api-bar" style="display:none;">
+      <div style="font-weight:700; color:var(--primary); margin-bottom:8px;">Koneksi Server &amp; PIN Tim IT (Cukup Isi 1x per Perangkat)</div>
+      <div class="grid-2">
+        <div class="field" style="margin-bottom:0;">
+          <label>URL Web App Google Apps Script *</label>
+          <input type="url" id="txtApiUrl" placeholder="https://script.google.com/macros/s/.../exec">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>PIN Rahasia Tim IT *</label>
+          <div class="row-inline">
+            <input type="password" id="txtApiPin" placeholder="Masukkan PIN (mis. SAPPHIRE2026)">
+            <button type="button" id="btnTogglePinVis" class="btn btn-outline btn-sm" style="white-space:nowrap;" onclick="togglePinVisibility()">Lihat</button>
+          </div>
+        </div>
+      </div>
+      <div class="row-inline" style="margin-top:9px; justify-content:space-between; flex-wrap:wrap;">
+        <div style="color:#475569; font-size:12px;">
+          Status: <strong id="apiStatusText">Belum diatur</strong> &bull;
+          <a href="javascript:void(0)" onclick="syncFromServer(false)">Sinkronisasi Data Sekarang</a>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" style="width:auto;" onclick="saveApiConfig()">Simpan &amp; Hubungkan</button>
+      </div>
+    </div>
+
+    <!-- Banner Antrean Offline -->
+    <div id="offlineQueueBox" class="alert alert-warn" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+        <span>Ada <strong id="queueCount">0</strong> sesi input tersimpan offline di perangkat ini.</span>
+        <button type="button" id="btnSyncQueue" class="btn btn-accent btn-sm" onclick="syncOfflineQueue()">Kirim Sekarang</button>
+      </div>
+    </div>
+
+    <!-- Grid Utama: 1 Kolom di HP, 2 Kolom (Sidebar Sticky + Area Unit) di Laptop -->
+    <div class="layout-grid">
+
+      <!-- SIDEBAR KIRI: Data Pemegang, Lokasi, PIC & Panel Aksi Desktop -->
+      <aside class="sidebar-col">
+        <div class="card">
+          <div class="card-title">
+            <span>1. Pemegang Aset &amp; Lokasi</span>
+            <span id="empCountBadge" class="photo-count-badge">0 Data</span>
+          </div>
+
+          <div class="field">
+            <label>Entitas / Perusahaan *</label>
+            <select id="selPT" required onchange="onSelectPT()"></select>
+          </div>
+
+          <div class="field">
+            <label id="lblLokasiKantor">Lokasi Kantor (Sub-Folder Drive) *</label>
+            <select id="selLokasi" required></select>
+            <div id="lokasiFilterHint" class="helper-text">Otomatis terfilter sesuai perusahaan yang dipilih di atas.</div>
+          </div>
+
+          <!-- Pencarian Pemegang Aset Berdasarkan Nama / ID / Divisi -->
+          <div class="field">
+            <label>Cari Pemegang Aset (Nama / Divisi / NIK)</label>
+            <div class="row-inline">
+              <div class="combo-wrap" id="empComboWrap">
+                <div class="combo-input-wrap">
+                  <input type="text" id="searchPemegang" autocomplete="off"
+                    placeholder="Ketik nama karyawan untuk mencari..."
+                    onfocus="openEmpDropdown()"
+                    oninput="filterEmpDropdown()">
+                  <button type="button" id="btnClearEmp" class="combo-clear" title="Reset ke Tanpa Nama Karyawan" onclick="clearSelectedEmployee()">&times;</button>
+                </div>
+                <div id="empDropdownList" class="combo-dropdown"></div>
+              </div>
+              <button type="button" class="btn btn-accent" onclick="openEmpModal()">+ Baru</button>
+            </div>
+            <label style="display:flex; align-items:center; gap:6px; margin-top:6px; font-weight:500; font-size:11.5px; cursor:pointer; color:#334155;">
+              <input type="checkbox" id="chkFilterEmpByPT" style="width:auto; margin:0;" onchange="if(document.getElementById('empDropdownList').style.display==='block') filterEmpDropdown();">
+              Hanya tampilkan karyawan dari perusahaan terpilih
+            </label>
+            <div id="selectedEmpPill" class="combo-selected-pill umum">
+              <span>Terpilih: <strong>Tanpa Nama Karyawan (Masuk Folder Kantor)</strong></span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Divisi</label>
+            <select id="selDivisi"></select>
+          </div>
+
+          <div class="field">
+            <label>Nama PIC Input (Petugas IT yang Mendata)</label>
+            <input type="text" id="txtPIC" placeholder="Nama Anda / Staf IT pendata" oninput="savePicLocal()">
+            <div class="helper-text">Diisi nama petugas IT yang sedang melakukan pendataan (otomatis diingat di perangkat ini).</div>
+          </div>
+        </div>
+
+        <!-- Panel Ringkasan & Tombol Aksi Khusus Tampilan Laptop/Desktop -->
+        <div class="card desktop-action-card">
+          <div class="card-title">Ringkasan Sesi Input</div>
+          <div class="summary-stats">
+            <div class="stat-box">
+              <div class="stat-val" id="statUnits">1</div>
+              <div class="stat-lbl">Total Unit</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val" id="statPhotos">0</div>
+              <div class="stat-lbl">Total Foto</div>
+            </div>
+          </div>
+          <div class="desktop-btn-stack">
+            <button type="button" class="btn btn-outline" onclick="addUnitCard()">+ Tambah Unit Perangkat</button>
+            <button type="button" id="btnSubmitDesktop" class="btn btn-primary" onclick="submitAll()">Simpan Semua Unit</button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- KOLOM KANAN: Daftar Kartu Multi-Unit -->
+      <main class="main-col">
+        <div id="unitsContainer"></div>
+      </main>
+
+    </div>
+  </div>
+
+  <!-- Tombol Aksi Bawah (Hanya Tampil di HP / Tablet Kecil) -->
+  <div class="footer-bar">
+    <div class="footer-inner">
+      <button type="button" class="btn btn-outline" style="flex:1" onclick="addUnitCard()">+ Tambah Unit</button>
+      <button type="button" id="btnSubmitMobile" class="btn btn-primary" style="flex:1.4" onclick="submitAll()">Simpan Semua Unit</button>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Karyawan Baru -->
+  <div id="empModal" class="modal-bg">
+    <div class="modal">
+      <div class="card-title">
+        <span>Tambah Karyawan Baru</span>
+        <button type="button" class="btn btn-danger" onclick="closeEmpModal()">Tutup</button>
+      </div>
+      <div class="field"><label>NIK / ID Karyawan (Kosongkan = Auto TMP-XXX)</label><input type="text" id="newEmpId" placeholder="Opsional"></div>
+      <div class="field"><label>Nama Lengkap Karyawan *</label><input type="text" id="newEmpNama" placeholder="Nama lengkap"></div>
+      <div class="field"><label>Entitas PT *</label><select id="newEmpPT" onchange="onSelectNewEmpPT()"></select></div>
+      <div class="field"><label>Lokasi Kantor *</label><select id="newEmpLokasi"></select></div>
+      <div class="field"><label>Divisi *</label><select id="newEmpDivisi"></select></div>
+      <button type="button" id="btnSaveEmp" class="btn btn-primary" onclick="saveNewEmployee()">Simpan &amp; Pilih Karyawan</button>
+    </div>
+  </div>
+
+  <!-- Modal Google Lens Style: Auto Deteksi QR, Barcode & Teks -->
+  <div id="snModal" class="modal-bg">
+    <div class="modal" style="max-width:540px;">
+      <div class="card-title">
+        <span>Smart Lens — Scan QR, Barcode &amp; Teks</span>
+        <button type="button" class="btn btn-danger" onclick="closeSnModal()">Tutup</button>
+      </div>
+
+      <!-- Mode Switcher ala Google Lens -->
+      <div class="lens-mode-tabs">
+        <button type="button" id="lensTabAuto" class="tab-btn active" onclick="setLensMode('auto')">Auto Lens (Semua)</button>
+        <button type="button" id="lensTabSlit" class="tab-btn" onclick="setLensMode('slit')">Celah Sempit (SN)</button>
+        <button type="button" id="lensTabQr" class="tab-btn" onclick="setLensMode('qr')">Kotak QR</button>
+      </div>
+
+      <!-- Banner Deteksi Real-Time saat QR/Barcode langsung tertangkap -->
+      <div id="lensLiveToast" class="lens-live-toast">
+        <div style="min-width:0; flex:1;">
+          <div style="font-size:10.5px; font-weight:700; text-transform:uppercase;" id="lensLiveFormat">QR / BARCODE TERDETEKSI</div>
+          <div style="font-weight:800; font-family:monospace; word-break:break-all;" id="lensLiveValue"></div>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" style="width:auto;" onclick="useLiveDetectedCode()">Pakai SN</button>
+      </div>
+
+      <!-- Unified Live Camera Viewport dengan Reticle & Bounding Box Canvas -->
+      <div id="lensViewport" class="lens-viewport">
+        <video id="lensVideo" playsinline autoplay muted></video>
+        <canvas id="lensOverlayCanvas" class="lens-overlay-canvas"></canvas>
+        <div id="lensReticle" class="lens-reticle">
+          <div class="lens-corner tl"></div>
+          <div class="lens-corner tr"></div>
+          <div class="lens-corner bl"></div>
+          <div class="lens-corner br"></div>
+          <div class="lens-scan-line"></div>
+        </div>
+        <div id="lensTopPill" class="lens-top-pill">Arahkan ke QR, Barcode, atau Stiker Teks</div>
+        <div class="lens-shutter-bar">
+          <button type="button" id="btnLensTorch" class="btn-lens-mini" style="display:none;" onclick="toggleLensTorch()">Senter</button>
+          <button type="button" id="btnLensCapture" class="btn-lens-shutter" onclick="captureAndAnalyzeLens()">Bidik &amp; Baca Semua</button>
+          <button type="button" class="btn-lens-mini" onclick="stopLensCamera()">Stop</button>
+        </div>
+      </div>
+
+      <!-- Slider Zoom Kamera Live -->
+      <div id="lensZoomControls" class="cam-controls">
+        <span>Zoom:</span>
+        <input type="range" id="lensZoomSlider" min="1" max="4" step="0.2" value="1" oninput="applyLensZoom(this.value)">
+        <span id="lensZoomVal">1.0x</span>
+      </div>
+
+      <div id="lensNote" class="scan-note">
+        <strong>Smart Lens</strong> otomatis mendeteksi <strong>QR Code, Barcode batang, Serial Number, IMEI, Merk, Model, &amp; MAC Address</strong> sekaligus dari kamera atau foto stiker.
+      </div>
+
+      <!-- Tombol Buka Kamera Live vs Foto Kamera HP / Galeri -->
+      <div class="grid-2">
+        <button type="button" id="btnStartLensCam" class="btn btn-primary btn-sm" onclick="toggleLensCamera()">Buka Kamera Lens</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('fileLensCam').click()">Foto Kamera HP</button>
+      </div>
+      <div style="margin-top:6px;">
+        <button type="button" class="btn btn-gal btn-sm" onclick="document.getElementById('fileLensGal').click()">Pilih Foto Stiker / QR dari Galeri</button>
+      </div>
+      <input type="file" id="fileLensCam" accept="image/*" capture="environment" style="display:none" onchange="loadPhotoToLens(event)">
+      <input type="file" id="fileLensGal" accept="image/*" style="display:none" onchange="loadPhotoToLens(event)">
+
+      <!-- Interactive Spotlight Cropper (Untuk Foto / Frame Beku) -->
+      <div id="sharedCropPanel" class="crop-panel">
+        <div class="crop-header">
+          <span id="cropTitleText">Atur Area Fokus atau Langsung Analisis Semua</span>
+          <button type="button" class="btn btn-danger" style="padding:3px 8px; font-size:11px;" onclick="hideCropPanel()">Tutup Foto</button>
+        </div>
+        <div class="crop-stage-outer">
+          <div id="cropImgWrap" class="crop-img-wrap">
+            <img id="cropSourceImg" alt="Area Crop Fokus">
+            <div id="cropBox" class="crop-box">
+              <div class="crop-handle nw" data-handle="nw"></div>
+              <div class="crop-handle ne" data-handle="ne"></div>
+              <div class="crop-handle sw" data-handle="sw"></div>
+              <div class="crop-handle se" data-handle="se"></div>
+            </div>
+          </div>
+        </div>
+        <div class="crop-presets">
+          <button type="button" class="crop-preset-btn" onclick="applyCropPreset('full')">Seluruh Stiker</button>
+          <button type="button" class="crop-preset-btn" onclick="applyCropPreset('narrow')">Celah 1 Baris</button>
+          <button type="button" class="crop-preset-btn" onclick="applyCropPreset('square')">Kotak QR</button>
+        </div>
+        <button type="button" id="btnRunCropAction" class="btn btn-primary btn-sm" onclick="executeLensPhotoAnalysis()">Analisis Area Terpilih (QR + Barcode + Teks)</button>
+      </div>
+
+      <!-- Pratinjau Area Fokus & Progress Analisis -->
+      <div id="croppedStripWrap" class="cropped-strip-wrap">
+        <div style="font-size:11px; font-weight:600; color:#475569;">Area yang dipindai Smart Lens:</div>
+        <img id="croppedStripImg" alt="Area Fokus">
+      </div>
+      <div id="ocrProgressWrap" class="progress-wrap"><div id="ocrProgressBar" class="progress-bar"></div></div>
+      <div id="ocrStatusText" class="helper-text" style="margin-bottom:6px;"></div>
+
+      <!-- Hasil Entitas Terdeteksi ala Google Lens (QR, SN, Merk, Model, MAC, URL, Teks) -->
+      <div id="lensResultsPanel" class="lens-results-panel">
+        <div class="lens-results-header">
+          <span class="lens-results-title">Hasil Deteksi Smart Lens</span>
+          <button type="button" id="btnApplyAllEntities" class="btn-apply-all" style="display:none;" onclick="applyAllDetectedEntities()">Terapkan Semua ke Kartu Unit</button>
+        </div>
+        <div id="lensEntityList" class="lens-entity-list"></div>
+
+        <div id="lensRawBox" class="lens-raw-box" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="margin:0;">Teks Lengkap Terbaca:</label>
+            <button type="button" class="btn-chip-act" onclick="copyRawLensText()">Salin Teks</button>
+          </div>
+          <textarea id="lensRawTextarea" class="lens-raw-text" readonly></textarea>
+        </div>
+      </div>
+
+      <!-- Kolom Final Serial Number (Bisa langsung diedit manual sebelum dipakai) -->
+      <div style="margin-top:12px; padding-top:10px; border-top:1px solid var(--border);">
+        <label>Serial Number / IMEI Terpilih (Bisa edit manual bila perlu):</label>
+        <div class="row-inline">
+          <input type="text" id="snResultInput" placeholder="Hasil QR / Barcode / Serial Number akan muncul di sini" style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-weight:700;">
+          <button type="button" class="btn btn-primary" style="width:auto; white-space:nowrap;" onclick="applySnResult()">Pakai SN</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Jika suatu saat ingin hardcode URL Web App di kode, isi di sini:
+    const HARDCODED_API_URL = '';
+
+    // Deteksi otomatis: apakah dibuka langsung dari Apps Script atau file HTML lokal
+    const IS_APPS_SCRIPT_HOST = (typeof google !== 'undefined' && google.script && google.script.run);
+
+    const DEFAULT_MASTER = {
+      pts: [
+        { kode: 'SGP', nama: 'Sapphire Grup PWT' },
+        { kode: 'SGT', nama: 'Sapphire Grup TGL' },
+        { kode: 'SGRH', nama: 'Sapphire Graha' },
+        { kode: 'SGRY', nama: 'Sapphire Griya' },
+        { kode: 'SMGR', nama: 'Samara Graha' },
+        { kode: 'SMGY', nama: 'Samara Griya' },
+        { kode: 'SGM', nama: 'Sapphire Griya Moderen' },
+        { kode: 'MSN', nama: 'Masnu Land' }
+      ],
+      locations: [
+        { kode: 'PWT-HO', nama: 'Kantor Pusat Purwokerto', pt: 'Semua PT' },
+        { kode: 'TGL-HO', nama: 'Kantor Pusat Tegal', pt: 'Semua PT' },
+        { kode: 'MEDIT', nama: 'Sapphire Mediterania Adiwerna', pt: 'Sapphire Griya Moderen' },
+        { kode: 'SCABRB', nama: 'Sapphire Scandia Brebes', pt: 'Sapphire Griya Moderen' },
+        { kode: 'SRTADI', nama: 'Sapphire Serenity Adiwerna', pt: 'Sapphire Griya Moderen' },
+        { kode: 'SRTSLW', nama: 'Sapphire Serenity Slawi', pt: 'Sapphire Griya Moderen' },
+        { kode: 'SRTMJS', nama: 'Sapphire Serenity Mejasem', pt: 'Sapphire Griya Moderen' }
+      ],
+      unitTypes: [
+        { kode: 'LPT', nama: 'Laptop' },
+        { kode: 'PC', nama: 'Komputer / PC' },
+        { kode: 'MON', nama: 'Monitor' },
+        { kode: 'PRT', nama: 'Printer & Scanner' },
+        { kode: 'HP', nama: 'Handphone / Tablet' },
+        { kode: 'DRN', nama: 'Drone' },
+        { kode: 'KAM', nama: 'Kamera' },
+        { kode: 'LNS', nama: 'Lensa' },
+        { kode: 'MIC', nama: 'Microphone' },
+        { kode: 'TRP', nama: 'Tripod & Stabilizer' },
+        { kode: 'STR', nama: 'Storage (HDD/SSD/Flashdisk)' },
+        { kode: 'KBM', nama: 'Keyboard & Mouse External' },
+        { kode: 'NET', nama: 'Perangkat Jaringan & CCTV' },
+        { kode: 'LNY', nama: 'Lainnya' }
+      ],
+      divisions: [
+        'IT', 'Markom (Marketing Komunikasi)', 'Marketing / Sales',
+        'Finance & Accounting', 'HRD & GA', 'Teknik & Proyek',
+        'Legal & Perizinan', 'Operasional / Estate'
+      ],
+      conditions: ['Baik', 'Rusak Ringan', 'Rusak Berat', 'Hilang'],
+      statuses: ['Dipakai Karyawan', 'Aset Bersama / Ruangan', 'Stok Gudang IT', 'Sedang Servis', 'Afkir / Disposed'],
+      employees: [
+        { id: 'UMUM-000', nama: 'Stok Gudang IT', pt: 'Sapphire Grup PWT', lokasi: 'Kantor Pusat Purwokerto', divisi: 'IT', status: 'Aset Bersama', label: 'Stok Gudang IT (IT - Kantor Pusat Purwokerto)' },
+        { id: 'UMUM-001', nama: 'Aset Umum - Front Office', pt: 'Sapphire Grup PWT', lokasi: 'Kantor Pusat Purwokerto', divisi: 'HRD & GA', status: 'Aset Bersama', label: 'Aset Umum - Front Office (HRD & GA - Kantor Pusat Purwokerto)' },
+        { id: 'UMUM-002', nama: 'Aset Umum - Ruang Meeting', pt: 'Sapphire Grup PWT', lokasi: 'Kantor Pusat Purwokerto', divisi: 'HRD & GA', status: 'Aset Bersama', label: 'Aset Umum - Ruang Meeting (HRD & GA - Kantor Pusat Purwokerto)' },
+        { id: 'UMUM-003', nama: 'Aset Umum - Divisi Markom', pt: 'Sapphire Grup PWT', lokasi: 'Kantor Pusat Purwokerto', divisi: 'Markom (Marketing Komunikasi)', status: 'Aset Bersama', label: 'Aset Umum - Divisi Markom (Markom - Kantor Pusat Purwokerto)' },
+        { id: 'UMUM-004', nama: 'Aset Umum - Pos Security / Kawasan', pt: 'Sapphire Grup PWT', lokasi: 'Kantor Pusat Purwokerto', divisi: 'Operasional / Estate', status: 'Aset Bersama', label: 'Aset Umum - Pos Security / Kawasan (Operasional - Kantor Pusat Purwokerto)' }
+      ]
+    };
+
+    const STORAGE_KEY_URL = 'sg_inv_webapp_url';
+    const STORAGE_KEY_PIN = 'sg_inv_api_pin';
+    const STORAGE_KEY_MASTER = 'sg_inv_master_cache';
+    const STORAGE_KEY_QUEUE = 'sg_inv_offline_queue';
+    const STORAGE_KEY_PIC = 'sg_inv_last_pic';
+
+    let MASTER = JSON.parse(localStorage.getItem(STORAGE_KEY_MASTER) || 'null') || DEFAULT_MASTER;
+    let selectedEmpId = '';
+    let unitSeq = 0;
+    let UNIT_PHOTOS = {};
+
+    // State Smart Lens (Unified Google Lens: QR + Barcode + OCR + Smart Entity Extraction)
+    let activeSnUid = null;
+    let lensMode = 'auto'; // 'auto' | 'slit' | 'qr'
+    let lensStream = null;
+    let lensTorchOn = false;
+    let lensDetectTimer = null;
+    let nativeBarcodeDetector = null;
+    let html5QrFileInstance = null;
+    let lastLiveCode = '';
+    let detectedEntities = [];
+
+    let cropRect = { x: 10, y: 10, w: 200, h: 120 };
+    let cropDragState = null;
+
+    window.onload = function() {
+      const savedUrl = HARDCODED_API_URL || localStorage.getItem(STORAGE_KEY_URL) || '';
+      const savedPin = localStorage.getItem(STORAGE_KEY_PIN) || '';
+      document.getElementById('txtApiUrl').value = savedUrl;
+      document.getElementById('txtApiPin').value = savedPin;
+      document.getElementById('txtPIC').value = localStorage.getItem(STORAGE_KEY_PIC) || '';
+
+      if (IS_APPS_SCRIPT_HOST) {
+        const badge = document.getElementById('connBadge');
+        badge.textContent = 'Apps Script Aktif';
+        badge.style.background = '#15803d';
+        badge.onclick = null;
+      } else {
+        updateApiStatusUI(savedUrl, savedPin);
+        if (!savedUrl || !savedPin) {
+          document.getElementById('apiConfigBox').style.display = 'block';
+        }
+      }
+
+      initForm(MASTER);
+      updateQueueBanner();
+      if (savedUrl && savedPin) {
+        syncFromServer(true);
+      }
+
+      // Tutup dropdown pencarian karyawan saat klik di luar area combobox
+      document.addEventListener('click', function(e) {
+        const wrap = document.getElementById('empComboWrap');
+        if (wrap && !wrap.contains(e.target)) {
+          document.getElementById('empDropdownList').style.display = 'none';
+        }
+      });
+    };
+
+    function getApiUrl() {
+      return HARDCODED_API_URL || localStorage.getItem(STORAGE_KEY_URL) || '';
+    }
+
+    function getApiPin() {
+      return (localStorage.getItem(STORAGE_KEY_PIN) || '').trim();
+    }
+
+    function savePicLocal() {
+      localStorage.setItem(STORAGE_KEY_PIC, document.getElementById('txtPIC').value.trim());
+    }
+
+    function toggleApiBox() {
+      if (IS_APPS_SCRIPT_HOST) return;
+      const box = document.getElementById('apiConfigBox');
+      box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function togglePinVisibility() {
+      const inp = document.getElementById('txtApiPin');
+      const btn = document.getElementById('btnTogglePinVis');
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        btn.textContent = 'Sembunyi';
+      } else {
+        inp.type = 'password';
+        btn.textContent = 'Lihat';
+      }
+    }
+
+    function saveApiConfig() {
+      const url = document.getElementById('txtApiUrl').value.trim();
+      const pin = document.getElementById('txtApiPin').value.trim();
+      if (!url.startsWith('https://script.google.com/')) {
+        alert('Pastikan URL diawali dengan https://script.google.com/...');
+        return;
+      }
+      if (!pin) {
+        alert('Masukkan PIN Rahasia Tim IT terlebih dahulu.');
+        return;
+      }
+      localStorage.setItem(STORAGE_KEY_URL, url);
+      localStorage.setItem(STORAGE_KEY_PIN, pin);
+      updateApiStatusUI(url, pin);
+      syncFromServer(false);
+    }
+
+    function updateApiStatusUI(url, pin) {
+      const badge = document.getElementById('connBadge');
+      const txt = document.getElementById('apiStatusText');
+      if (url && pin) {
+        badge.textContent = 'Terhubung (PIN Aktif)';
+        badge.style.background = '#15803d';
+        txt.textContent = 'URL & PIN tersimpan di perangkat';
+      } else if (url && !pin) {
+        badge.textContent = 'Isi PIN IT';
+        badge.style.background = '#b45309';
+        txt.textContent = 'URL tersimpan, PIN Tim IT belum diisi';
+      } else {
+        badge.textContent = 'Atur URL & PIN';
+        badge.style.background = '#b45309';
+        txt.textContent = 'Belum diatur (tempel URL Web App & PIN IT)';
+      }
+    }
+
+    function setSelectIgnoreCase(el, targetVal) {
+      if (!el || !targetVal) return false;
+      const needle = String(targetVal).trim().toLowerCase();
+      for (let i = 0; i < el.options.length; i++) {
+        if (el.options[i].value.trim().toLowerCase() === needle) {
+          el.selectedIndex = i;
+          return true;
+        }
+      }
+      return false;
+    }
+
+    async function syncFromServer(silent) {
+      if (IS_APPS_SCRIPT_HOST) {
+        google.script.run.withSuccessHandler(data => {
+          if (data) {
+            MASTER = data;
+            localStorage.setItem(STORAGE_KEY_MASTER, JSON.stringify(data));
+            initForm(MASTER, true);
+            if (!silent) showSuccess('Data Master & ' + (MASTER.employees || []).length + ' Karyawan disinkronkan dari Spreadsheet.');
+          }
+        }).withFailureHandler(err => {
+          if (!silent) showError(err.message || err);
+        }).getInitialData();
+        return;
+      }
+
+      const url = getApiUrl();
+      const pin = getApiPin();
+      if (!url) return;
+      if (!pin) {
+        document.getElementById('apiConfigBox').style.display = 'block';
+        if (!silent) showError('Masukkan PIN Rahasia Tim IT terlebih dahulu lalu klik Simpan & Hubungkan.');
+        return;
+      }
+
+      try {
+        const res = await fetch(url + '?action=init&key=' + encodeURIComponent(pin) + '&t=' + Date.now());
+        const data = await res.json();
+        if (data && data.success === false) {
+          document.getElementById('apiConfigBox').style.display = 'block';
+          const badge = document.getElementById('connBadge');
+          badge.textContent = 'PIN Salah';
+          badge.style.background = '#c0392b';
+          document.getElementById('apiStatusText').textContent = 'PIN ditolak oleh server';
+          showError(data.error || 'Akses ditolak: PIN Tim IT tidak valid.');
+          return;
+        }
+        if (data && (data.success || data.pts)) {
+          MASTER = data;
+          localStorage.setItem(STORAGE_KEY_MASTER, JSON.stringify(data));
+          updateApiStatusUI(url, pin);
+          initForm(MASTER, true);
+          const mappedCount = (MASTER.locations || []).filter(l => (l.pt || '').trim() !== '').length;
+          if (!silent) {
+            if (mappedCount === 0) {
+              showError('Sinkronisasi berhasil, tetapi kolom Entitas_PT lokasi masih kosong dari server. Pastikan Code.gs sudah diperbarui dan di-deploy ulang sebagai New version.');
+            } else {
+              showSuccess(`Terhubung! ${(MASTER.locations || []).length} lokasi (${mappedCount} terpetakan ke PT) & ${(MASTER.employees || []).length} karyawan berhasil disinkronkan.`);
+              document.getElementById('apiConfigBox').style.display = 'none';
+            }
+          }
+        }
+      } catch (e) {
+        if (!silent) showError('Gagal menyinkronkan ke server. Pastikan izin Web App diset ke "Anyone" dan internet aktif.');
+      }
+    }
+
+    function uniqueList(arr) {
+      return Array.from(new Set(arr.map(s => String(s || '').trim()).filter(Boolean)));
+    }
+
+    function initForm(data, keepUnits) {
+      const uniquePts = uniqueList((data.pts || []).map(x => x.nama));
+      fillSelect('selPT', uniquePts);
+      fillSelect('selDivisi', uniqueList(data.divisions || []));
+      fillSelect('newEmpPT', uniquePts);
+      fillSelect('newEmpDivisi', uniqueList(data.divisions || []));
+
+      onSelectPT();
+      onSelectNewEmpPT();
+
+      document.getElementById('empCountBadge').textContent = (data.employees || []).length + ' Data';
+      updateSelectedEmpUI();
+
+      if (!keepUnits && document.querySelectorAll('.unit-card').length === 0) {
+        addUnitCard();
+      }
+      updateSummaryStats();
+    }
+
+    function fillSelect(id, items, preferredVal) {
+      const el = document.getElementById(id);
+      const prev = preferredVal !== undefined ? preferredVal : el.value;
+      el.innerHTML = items.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+      if (prev) {
+        setSelectIgnoreCase(el, prev);
+      }
+    }
+
+    // ======================================================
+    // FILTER LOKASI KANTOR BERDASARKAN ENTITAS / PERUSAHAAN
+    // ======================================================
+    function getLocationsForPT(ptName) {
+      const allLocs = MASTER.locations || [];
+      if (!ptName) return { items: uniqueList(allLocs.map(x => x.nama)), mode: 'all' };
+
+      const target = ptName.trim().toLowerCase();
+      const anyMapped = allLocs.some(loc => (loc.pt || '').trim() !== '');
+
+      // 1. Cek pemetaan eksplisit di Master_Referensi kolom G (Entitas_PT)
+      const explicitMatches = allLocs.filter(loc => {
+        const rawPt = (loc.pt || '').trim();
+        if (!rawPt) return false;
+        const tokens = rawPt.split(/[,;|]/).map(s => s.trim().toLowerCase()).filter(Boolean);
+        return tokens.includes('semua pt') || tokens.includes('all') || tokens.includes(target);
+      });
+
+      if (explicitMatches.length > 0) {
+        return { items: uniqueList(explicitMatches.map(x => x.nama)), mode: 'mapped' };
+      }
+
+      // 2. Fallback otomatis dari relasi karyawan yang sudah ada di Master_Karyawan
+      const empLocNames = new Set(
+        (MASTER.employees || [])
+          .filter(e => (e.pt || '').trim().toLowerCase() === target && e.lokasi)
+          .map(e => e.lokasi.trim().toLowerCase())
+      );
+      if (empLocNames.size > 0) {
+        const inferred = allLocs.filter(loc => empLocNames.has(loc.nama.trim().toLowerCase()));
+        if (inferred.length > 0) {
+          return { items: uniqueList(inferred.map(x => x.nama)), mode: 'inferred' };
+        }
+      }
+
+      // 3. Fallback akhir: tampilkan semua lokasi jika PT belum dipetakan di Master_Referensi
+      return {
+        items: uniqueList(allLocs.map(x => x.nama)),
+        mode: anyMapped ? 'unmapped_pt' : 'no_server_mapping'
+      };
+    }
+
+    function onSelectPT(preferredLokasi) {
+      const selectedPt = document.getElementById('selPT').value;
+      const result = getLocationsForPT(selectedPt);
+      fillSelect('selLokasi', result.items, preferredLokasi);
+
+      const lbl = document.getElementById('lblLokasiKantor');
+      const hint = document.getElementById('lokasiFilterHint');
+      if (result.mode === 'mapped') {
+        lbl.textContent = `Lokasi Kantor (${result.items.length} lokasi ${selectedPt}) *`;
+        hint.textContent = `Terfilter sesuai kolom Entitas_PT untuk ${selectedPt}.`;
+        hint.style.color = 'var(--ok)';
+      } else if (result.mode === 'inferred') {
+        lbl.textContent = `Lokasi Kantor (${result.items.length} lokasi terdeteksi) *`;
+        hint.textContent = `Terfilter otomatis dari data Master_Karyawan untuk ${selectedPt}.`;
+        hint.style.color = 'var(--muted)';
+      } else if (result.mode === 'no_server_mapping') {
+        lbl.textContent = `Lokasi Kantor (${result.items.length} lokasi) *`;
+        hint.textContent = `Data server belum memuat kolom G (Entitas_PT). Perbarui Code.gs & klik Sinkronisasi.`;
+        hint.style.color = '#b45309';
+      } else {
+        lbl.textContent = `Lokasi Kantor (${result.items.length} lokasi) *`;
+        hint.textContent = `Belum ada baris lokasi bertanda "${selectedPt}" di kolom G Master_Referensi — menampilkan semua lokasi.`;
+        hint.style.color = '#b45309';
+      }
+    }
+
+    function onSelectNewEmpPT(preferredLokasi) {
+      const selectedPt = document.getElementById('newEmpPT').value;
+      const result = getLocationsForPT(selectedPt);
+      fillSelect('newEmpLokasi', result.items, preferredLokasi);
+    }
+
+    // ======================================================
+    // PENCARIAN PEMEGANG ASET (LIVE SEARCH AUTOCOMPLETE)
+    // ======================================================
+    function openEmpDropdown() {
+      filterEmpDropdown();
+      document.getElementById('empDropdownList').style.display = 'block';
+    }
+
+    function filterEmpDropdown() {
+      const q = document.getElementById('searchPemegang').value.trim().toLowerCase();
+      const activePt = (document.getElementById('selPT').value || '').trim().toLowerCase();
+      const strictPt = document.getElementById('chkFilterEmpByPT')?.checked || false;
+      const clearBtn = document.getElementById('btnClearEmp');
+      clearBtn.style.display = (q || selectedEmpId) ? 'flex' : 'none';
+
+      const listEl = document.getElementById('empDropdownList');
+      let allEmps = MASTER.employees || [];
+
+      if (strictPt && activePt) {
+        allEmps = allEmps.filter(e =>
+          (e.pt || '').trim().toLowerCase() === activePt ||
+          String(e.id || '').toUpperCase().startsWith('UMUM-')
+        );
+      }
+
+      let matches = q
+        ? allEmps.filter(e =>
+            (e.nama || '').toLowerCase().includes(q) ||
+            (e.id || '').toLowerCase().includes(q) ||
+            (e.divisi || '').toLowerCase().includes(q) ||
+            (e.lokasi || '').toLowerCase().includes(q) ||
+            (e.pt || '').toLowerCase().includes(q)
+          )
+        : allEmps;
+
+      // Urutkan karyawan dari PT yang sedang dipilih ke bagian paling atas
+      if (activePt && !strictPt) {
+        matches = [...matches].sort((a, b) => {
+          const aMatch = (a.pt || '').trim().toLowerCase() === activePt ? 0 : 1;
+          const bMatch = (b.pt || '').trim().toLowerCase() === activePt ? 0 : 1;
+          return aMatch - bMatch;
+        });
+      }
+
+      let html = `
+        <div class="combo-item" onclick="selectEmployee('')">
+          <div class="combo-item-title">
+            <span>-- Tanpa Nama Karyawan (Aset Kantor) --</span>
+            <span class="combo-tag">FOLDER KANTOR</span>
+          </div>
+          <div class="combo-item-sub">Foto langsung masuk ke folder Lokasi Kantor</div>
+        </div>
+      `;
+
+      if (matches.length === 0) {
+        html += `
+          <div class="combo-item" onclick="openEmpModalWithName('${escapeJs(document.getElementById('searchPemegang').value.trim())}')">
+            <div class="combo-item-title" style="color:var(--primary);">+ Tambah "${escapeHtml(document.getElementById('searchPemegang').value.trim())}" sebagai Karyawan Baru</div>
+            <div class="combo-item-sub">Data tidak ditemukan — klik untuk tambah cepat</div>
+          </div>
+        `;
+      } else {
+        const sliced = matches.slice(0, 60);
+        html += sliced.map(e => `
+          <div class="combo-item ${e.id === selectedEmpId ? 'active' : ''}" onclick="selectEmployee('${escapeJs(e.id)}')">
+            <div class="combo-item-title">
+              <span>${escapeHtml(e.nama)}</span>
+              <span class="combo-tag">${escapeHtml(e.id)}</span>
+            </div>
+            <div class="combo-item-sub">${escapeHtml(e.divisi || '-')} &bull; ${escapeHtml(e.lokasi || '-')} &bull; ${escapeHtml(e.pt || '-')}</div>
+          </div>
+        `).join('');
+
+        if (matches.length > 60) {
+          html += `<div class="combo-item" style="text-align:center; color:var(--muted); cursor:default;">Menampilkan 60 dari ${matches.length} hasil. Ketik nama lebih spesifik...</div>`;
+        }
+      }
+
+      listEl.innerHTML = html;
+      listEl.style.display = 'block';
+    }
+
+    function selectEmployee(empId) {
+      selectedEmpId = empId || '';
+      const emp = (MASTER.employees || []).find(e => e.id === selectedEmpId);
+      const inputEl = document.getElementById('searchPemegang');
+      if (emp) {
+        inputEl.value = emp.nama;
+        if (emp.pt && setSelectIgnoreCase(document.getElementById('selPT'), emp.pt)) {
+          onSelectPT(emp.lokasi || '');
+        }
+        if (emp.lokasi) {
+          const lokEl = document.getElementById('selLokasi');
+          if (!setSelectIgnoreCase(lokEl, emp.lokasi)) {
+            const opt = document.createElement('option');
+            opt.value = emp.lokasi;
+            opt.textContent = emp.lokasi;
+            lokEl.appendChild(opt);
+            lokEl.value = emp.lokasi;
+          }
+        }
+        if (emp.divisi) {
+          setSelectIgnoreCase(document.getElementById('selDivisi'), emp.divisi);
+        }
+      } else {
+        inputEl.value = '';
+      }
+      document.getElementById('empDropdownList').style.display = 'none';
+      updateSelectedEmpUI();
+    }
+
+    function clearSelectedEmployee() {
+      selectedEmpId = '';
+      document.getElementById('searchPemegang').value = '';
+      updateSelectedEmpUI();
+      document.getElementById('searchPemegang').focus();
+    }
+
+    function updateSelectedEmpUI() {
+      const pill = document.getElementById('selectedEmpPill');
+      const clearBtn = document.getElementById('btnClearEmp');
+      const emp = (MASTER.employees || []).find(e => e.id === selectedEmpId);
+
+      if (emp) {
+        const isUmum = emp.id.toUpperCase().startsWith('UMUM-');
+        pill.className = 'combo-selected-pill' + (isUmum ? ' umum' : '');
+        pill.innerHTML = `<span>Terpilih: <strong>${escapeHtml(emp.nama)}</strong> (${escapeHtml(emp.id)})</span>`;
+        clearBtn.style.display = 'flex';
+      } else {
+        pill.className = 'combo-selected-pill umum';
+        pill.innerHTML = `<span>Terpilih: <strong>Tanpa Nama Karyawan (Masuk Folder Kantor)</strong></span>`;
+        clearBtn.style.display = document.getElementById('searchPemegang').value ? 'flex' : 'none';
+      }
+    }
+
+    // ======================================================
+    // KERANJANG MULTI-UNIT & MULTI-FOTO
+    // ======================================================
+    function addUnitCard() {
+      unitSeq++;
+      const uid = 'unit_' + unitSeq;
+      UNIT_PHOTOS[uid] = [];
+
+      const div = document.createElement('div');
+      div.className = 'card unit-card';
+      div.id = uid;
+
+      const tipeOpts = MASTER.unitTypes.map(u => `<option value="${escapeHtml(u.nama)}">${escapeHtml(u.nama)}</option>`).join('');
+      const kondOpts = MASTER.conditions.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+      const statOpts = MASTER.statuses.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+
+      div.innerHTML = `
+        <div class="card-title">
+          <span>Unit #<span class="unit-num"></span> <span id="badge_${uid}" class="photo-count-badge">0 Foto</span></span>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <button type="button" class="btn-lens-card" title="Buka Smart Lens (Auto Deteksi QR, Barcode, Merk, Model & SN)" onclick="openSnModal('${uid}', 'auto')">Smart Lens</button>
+            <button type="button" class="btn btn-danger" onclick="removeUnitCard('${uid}')">Hapus</button>
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="field"><label>Tipe Unit *</label><select class="u-tipe">${tipeOpts}</select></div>
+          <div class="field"><label>Merk *</label><input type="text" class="u-merk" placeholder="Lenovo / Epson / DJI"></div>
+          <div class="field"><label>Model / Tipe *</label><input type="text" class="u-model" placeholder="ThinkBook 14 / L3150"></div>
+        </div>
+
+        <div class="grid-2" style="margin-top:10px;">
+          <div class="field">
+            <label>Serial Number / IMEI (Smart Lens: QR, Barcode, Teks, atau Manual)</label>
+            <div class="sn-group">
+              <input type="text" class="u-sn" id="sn_${uid}" placeholder="Ketik manual atau scan pakai Smart Lens">
+              <button type="button" class="btn-sn" title="Buka Smart Lens (Auto QR + Barcode + Teks)" onclick="openSnModal('${uid}', 'auto')">Lens QR/Teks</button>
+              <button type="button" class="btn-sn ocr" title="Fokus Celah Sempit (1 Baris SN)" onclick="openSnModal('${uid}', 'slit')">Celah SN</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Spesifikasi Ringkas</label>
+            <input type="text" class="u-spek" placeholder="Contoh: i5 / 16GB / 512GB SSD">
+          </div>
+        </div>
+
+        <div class="grid-3" style="margin-top:10px;">
+          <div class="field"><label>Kelengkapan</label><input type="text" class="u-kelengkapan" placeholder="Charger, tas, kabel power, baterai, dll."></div>
+          <div class="field"><label>Kondisi Fisik</label><select class="u-kondisi">${kondOpts}</select></div>
+          <div class="field"><label>Status Aset</label><select class="u-status">${statOpts}</select></div>
+        </div>
+
+        <details style="margin-top:8px;">
+          <summary>+ Info Pembelian, Garansi &amp; Catatan (Opsional)</summary>
+          <div class="grid-2" style="margin-top:8px;">
+            <div class="field"><label>Tanggal Beli</label><input type="date" class="u-tglbeli"></div>
+            <div class="field"><label>Harga Perolehan (Rp)</label><input type="number" class="u-harga" placeholder="Contoh: 8500000"></div>
+          </div>
+          <div class="grid-2" style="margin-top:8px;">
+            <div class="field"><label>Akhir Garansi</label><input type="date" class="u-garansi"></div>
+            <div class="field"><label>Catatan Tambahan</label><input type="text" class="u-catatan" placeholder="Catatan kerusakan / keterangan"></div>
+          </div>
+        </details>
+
+        <div class="field" style="margin-top:12px;">
+          <label>Dokumentasi Foto Unit (Bisa Lebih dari 1 Foto: Unit, SN, Kelengkapan)</label>
+          <input type="file" accept="image/*" capture="environment" id="cam_${uid}" style="display:none" onchange="handlePhotoFiles(event, '${uid}')">
+          <input type="file" accept="image/*" multiple id="gal_${uid}" style="display:none" onchange="handlePhotoFiles(event, '${uid}')">
+          <div class="photo-actions">
+            <button type="button" class="btn btn-cam" onclick="document.getElementById('cam_${uid}').click()">+ Kamera</button>
+            <button type="button" class="btn btn-gal" onclick="document.getElementById('gal_${uid}').click()">+ Galeri (Multi)</button>
+          </div>
+          <div id="grid_${uid}" class="photo-grid"></div>
+        </div>
+      `;
+      document.getElementById('unitsContainer').appendChild(div);
+      renumberUnits();
+      updateSummaryStats();
+    }
+
+    function removeUnitCard(uid) {
+      if (document.querySelectorAll('.unit-card').length <= 1) {
+        alert('Minimal harus ada 1 unit yang diinput.');
+        return;
+      }
+      delete UNIT_PHOTOS[uid];
+      document.getElementById(uid).remove();
+      renumberUnits();
+      updateSummaryStats();
+    }
+
+    function renumberUnits() {
+      document.querySelectorAll('.unit-card .unit-num').forEach((el, i) => el.textContent = i + 1);
+    }
+
+    function updateSummaryStats() {
+      const units = document.querySelectorAll('.unit-card').length;
+      const photos = Object.values(UNIT_PHOTOS).reduce((sum, arr) => sum + (arr ? arr.length : 0), 0);
+      const uEl = document.getElementById('statUnits');
+      const pEl = document.getElementById('statPhotos');
+      if (uEl) uEl.textContent = units;
+      if (pEl) pEl.textContent = photos;
+    }
+
+    function compressImageFile(file, maxW = 1024, quality = 0.72) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+            const scale = img.width > maxW ? (maxW / img.width) : 1;
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.onerror = reject;
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handlePhotoFiles(event, uid) {
+      const files = Array.from(event.target.files || []);
+      if (files.length === 0) return;
+      if (!UNIT_PHOTOS[uid]) UNIT_PHOTOS[uid] = [];
+
+      for (const file of files) {
+        try {
+          const compressed = await compressImageFile(file);
+          UNIT_PHOTOS[uid].push({
+            id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+            dataUrl: compressed
+          });
+        } catch (err) {
+          console.error('Gagal memproses foto:', err);
+        }
+      }
+      event.target.value = '';
+      renderPhotoGrid(uid);
+      updateSummaryStats();
+    }
+
+    function removeSinglePhoto(uid, photoId) {
+      if (!UNIT_PHOTOS[uid]) return;
+      UNIT_PHOTOS[uid] = UNIT_PHOTOS[uid].filter(p => p.id !== photoId);
+      renderPhotoGrid(uid);
+      updateSummaryStats();
+    }
+
+    function renderPhotoGrid(uid) {
+      const list = UNIT_PHOTOS[uid] || [];
+      const badge = document.getElementById('badge_' + uid);
+      if (badge) badge.textContent = list.length + ' Foto';
+
+      const grid = document.getElementById('grid_' + uid);
+      if (!grid) return;
+
+      grid.innerHTML = list.map((p, idx) => `
+        <div class="photo-item">
+          <img src="${p.dataUrl}" alt="Foto ${idx + 1}">
+          <span class="photo-num">#${idx + 1}</span>
+          <button type="button" class="photo-del" title="Hapus foto ini" onclick="removeSinglePhoto('${uid}', '${p.id}')">&times;</button>
+        </div>
+      `).join('');
+    }
+
+    // ======================================================
+    // SMART LENS ENGINE (GOOGLE LENS STYLE: QR + BARCODE + TEKS + AUTO-FILL)
+    // ======================================================
+    const KNOWN_BRANDS = [
+      { name: 'Lenovo', unit: 'Laptop' },
+      { name: 'ThinkPad', brand: 'Lenovo', unit: 'Laptop' },
+      { name: 'ThinkBook', brand: 'Lenovo', unit: 'Laptop' },
+      { name: 'IdeaPad', brand: 'Lenovo', unit: 'Laptop' },
+      { name: 'IdeaCentre', brand: 'Lenovo', unit: 'Komputer / PC' },
+      { name: 'ASUS', unit: 'Laptop' },
+      { name: 'ExpertCenter', brand: 'ASUS', unit: 'Komputer / PC' },
+      { name: 'VivoBook', brand: 'ASUS', unit: 'Laptop' },
+      { name: 'ZenBook', brand: 'ASUS', unit: 'Laptop' },
+      { name: 'Dell', unit: 'Laptop' },
+      { name: 'Latitude', brand: 'Dell', unit: 'Laptop' },
+      { name: 'OptiPlex', brand: 'Dell', unit: 'Komputer / PC' },
+      { name: 'HP', unit: 'Laptop' },
+      { name: 'Hewlett-Packard', brand: 'HP', unit: 'Laptop' },
+      { name: 'Pavilion', brand: 'HP', unit: 'Laptop' },
+      { name: 'ProBook', brand: 'HP', unit: 'Laptop' },
+      { name: 'EliteBook', brand: 'HP', unit: 'Laptop' },
+      { name: 'LaserJet', brand: 'HP', unit: 'Printer & Scanner' },
+      { name: 'Smart Tank', brand: 'HP', unit: 'Printer & Scanner' },
+      { name: 'Ink Tank', brand: 'HP', unit: 'Printer & Scanner' },
+      { name: 'Acer', unit: 'Laptop' },
+      { name: 'Apple', unit: 'Laptop' },
+      { name: 'MacBook', brand: 'Apple', unit: 'Laptop' },
+      { name: 'iPhone', brand: 'Apple', unit: 'Handphone / Tablet' },
+      { name: 'iPad', brand: 'Apple', unit: 'Handphone / Tablet' },
+      { name: 'MSI', unit: 'Laptop' },
+      { name: 'Epson', unit: 'Printer & Scanner' },
+      { name: 'EcoTank', brand: 'Epson', unit: 'Printer & Scanner' },
+      { name: 'Canon', unit: 'Printer & Scanner' },
+      { name: 'PIXMA', brand: 'Canon', unit: 'Printer & Scanner' },
+      { name: 'Brother', unit: 'Printer & Scanner' },
+      { name: 'DJI', unit: 'Drone' },
+      { name: 'Mavic', brand: 'DJI', unit: 'Drone' },
+      { name: 'Sony', unit: 'Kamera' },
+      { name: 'Alpha', brand: 'Sony', unit: 'Kamera' },
+      { name: 'Nikon', unit: 'Kamera' },
+      { name: 'Fujifilm', unit: 'Kamera' },
+      { name: 'GoPro', unit: 'Kamera' },
+      { name: 'Insta360', unit: 'Kamera' },
+      { name: 'Samsung', unit: 'Handphone / Tablet' },
+      { name: 'Galaxy', brand: 'Samsung', unit: 'Handphone / Tablet' },
+      { name: 'Xiaomi', unit: 'Handphone / Tablet' },
+      { name: 'POCO', unit: 'Handphone / Tablet' },
+      { name: 'iQOO', unit: 'Handphone / Tablet' },
+      { name: 'Vivo', unit: 'Handphone / Tablet' },
+      { name: 'Oppo', unit: 'Handphone / Tablet' },
+      { name: 'Realme', unit: 'Handphone / Tablet' },
+      { name: 'MikroTik', unit: 'Perangkat Jaringan & CCTV' },
+      { name: 'TP-Link', unit: 'Perangkat Jaringan & CCTV' },
+      { name: 'Ubiquiti', unit: 'Perangkat Jaringan & CCTV' },
+      { name: 'Ruijie', unit: 'Perangkat Jaringan & CCTV' },
+      { name: 'Hikvision', unit: 'Perangkat Jaringan & CCTV' },
+      { name: 'EZVIZ', unit: 'Perangkat Jaringan & CCTV' },
+      { name: 'Dahua', unit: 'Perangkat Jaringan & CCTV' },
+      { name: 'LG', unit: 'Monitor' },
+      { name: 'BenQ', unit: 'Monitor' },
+      { name: 'ViewSonic', unit: 'Monitor' },
+      { name: 'Logitech', unit: 'Keyboard & Mouse External' },
+      { name: 'Seagate', unit: 'Storage (HDD/SSD/Flashdisk)' },
+      { name: 'Western Digital', brand: 'WD', unit: 'Storage (HDD/SSD/Flashdisk)' },
+      { name: 'SanDisk', unit: 'Storage (HDD/SSD/Flashdisk)' },
+      { name: 'Kingston', unit: 'Storage (HDD/SSD/Flashdisk)' },
+      { name: 'Rode', unit: 'Microphone' },
+      { name: 'Boya', unit: 'Microphone' },
+      { name: 'Saramonic', unit: 'Microphone' },
+      { name: 'Zhiyun', unit: 'Tripod & Stabilizer' },
+      { name: 'Manfrotto', unit: 'Tripod & Stabilizer' }
+    ];
+
+    function playLensFeedback() {
+      try {
+        if (navigator.vibrate) navigator.vibrate(45);
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.09);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.12);
+      } catch (e) {}
+    }
+
+    function openSnModal(uid, mode) {
+      activeSnUid = uid;
+      const currentVal = (document.getElementById('sn_' + uid)?.value || '').trim();
+      document.getElementById('snResultInput').value = currentVal;
+      resetLensFeedback();
+      hideCropPanel();
+      document.getElementById('snModal').style.display = 'flex';
+      setLensMode(mode || 'auto');
+      initCropperEventsOnce();
+    }
+
+    function closeSnModal() {
+      stopLensCamera();
+      hideCropPanel();
+      document.getElementById('snModal').style.display = 'none';
+      activeSnUid = null;
+    }
+
+    function resetLensFeedback() {
+      lastLiveCode = '';
+      detectedEntities = [];
+      document.getElementById('lensLiveToast').style.display = 'none';
+      document.getElementById('lensResultsPanel').style.display = 'none';
+      document.getElementById('lensEntityList').innerHTML = '';
+      document.getElementById('lensRawBox').style.display = 'none';
+      document.getElementById('ocrStatusText').textContent = '';
+      document.getElementById('ocrProgressWrap').style.display = 'none';
+      document.getElementById('croppedStripWrap').style.display = 'none';
+    }
+
+    function setLensMode(mode) {
+      lensMode = mode || 'auto';
+      document.getElementById('lensTabAuto').classList.toggle('active', lensMode === 'auto');
+      document.getElementById('lensTabSlit').classList.toggle('active', lensMode === 'slit');
+      document.getElementById('lensTabQr').classList.toggle('active', lensMode === 'qr');
+
+      const reticle = document.getElementById('lensReticle');
+      const pill = document.getElementById('lensTopPill');
+      if (reticle) {
+        reticle.classList.remove('slit', 'square');
+        if (lensMode === 'slit') reticle.classList.add('slit');
+        else if (lensMode === 'qr') reticle.classList.add('square');
+      }
+      if (pill) {
+        if (lensMode === 'slit') pill.textContent = 'Sejajarkan 1 baris Serial Number / Barcode di celah';
+        else if (lensMode === 'qr') pill.textContent = 'Posisikan QR Code di dalam kotak tengah';
+        else pill.textContent = 'Auto Lens: QR, Barcode & Teks Label';
+      }
+
+      if (document.getElementById('sharedCropPanel').style.display === 'block') {
+        const preset = lensMode === 'slit' ? 'narrow' : (lensMode === 'qr' ? 'square' : 'full');
+        applyCropPreset(preset);
+      }
+    }
+
+    // ---------- LIVE GOOGLE LENS CAMERA (ANDROID MULTI-FALLBACK & DIAGNOSTICS) ----------
+    async function requestAndroidResilientStream() {
+      const constraintsList = [
+        {
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          },
+          audio: false
+        },
+        {
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        },
+        {
+          video: { facingMode: 'environment' },
+          audio: false
+        },
+        {
+          video: true,
+          audio: false
+        }
+      ];
+
+      let lastErr = null;
+      for (const c of constraintsList) {
+        try {
+          return await navigator.mediaDevices.getUserMedia(c);
+        } catch (err) {
+          lastErr = err;
+          // Jika ditolak izin atau protokol tidak aman, tidak perlu coba constraint lain
+          if (err && (err.name === 'NotAllowedError' || err.name === 'SecurityError' || err.name === 'PermissionDeniedError')) {
+            throw err;
+          }
+        }
+      }
+      throw lastErr || new Error('Gagal mengakses kamera perangkat.');
+    }
+
+    function diagnoseAndroidCameraError(err) {
+      const proto = window.location.protocol || '';
+      const ua = navigator.userAgent || '';
+      const isInApp = /FBAN|FBAV|Instagram|WhatsApp|Telegram|Line|wv\)/i.test(ua);
+      const errName = (err && err.name) ? err.name : '';
+      const errMsg = (err && err.message) ? err.message : String(err || '');
+
+      if (!window.isSecureContext || proto === 'file:' || proto === 'content:') {
+        return `
+          <strong style="color:var(--danger);">Live Camera diblokir karena dibuka dari memori lokal (<code>${escapeHtml(proto)}</code>).</strong><br>
+          Android Chrome mewajibkan alamat <code>https://</code> atau <code>http://localhost</code> untuk Live Camera.<br>
+          <strong>Solusi cepat:</strong> Gunakan tombol <strong>"Foto Kamera HP"</strong> di kanan (tetap langsung buka kamera HP), atau host file HTML ini di HTTPS gratis (Netlify Drop / GitHub Pages).
+        `;
+      }
+
+      if (isInApp) {
+        return `
+          <strong style="color:var(--danger);">Browser bawaan aplikasi (WhatsApp/File Viewer) memblokir kamera.</strong><br>
+          Ketuk ikon <strong>titik tiga (&vellip;)</strong> di pojok kanan atas layar &rarr; pilih <strong>"Buka di Chrome / Open in Browser"</strong>.
+        `;
+      }
+
+      if (errName === 'NotAllowedError' || errName === 'PermissionDeniedError') {
+        return `
+          <strong style="color:var(--danger);">Izin Kamera Ditolak (NotAllowedError).</strong><br>
+          1. Ketuk ikon <strong>gembok / pengaturan situs</strong> di sebelah kiri alamat URL Chrome &rarr; <strong>Izin (Permissions) &rarr; Kamera &rarr; Izinkan</strong>.<br>
+          2. Pastikan juga di <strong>Setelan HP &rarr; Aplikasi &rarr; Chrome &rarr; Izin &rarr; Kamera</strong> sudah aktif.
+        `;
+      }
+
+      if (errName === 'NotReadableError' || errName === 'TrackStartError') {
+        return `
+          <strong style="color:var(--danger);">Kamera Sedang Dipakai Aplikasi Lain (NotReadableError).</strong><br>
+          Tutup aplikasi kamera/WhatsApp/scanner lain yang masih berjalan di latar belakang, lalu coba tekan <strong>Buka Kamera Lens</strong> lagi.
+        `;
+      }
+
+      if (errName === 'NotFoundError' || errName === 'DevicesNotFoundError') {
+        return `
+          <strong style="color:var(--danger);">Sensor Kamera Tidak Ditemukan (NotFoundError).</strong><br>
+          Perangkat tidak melaporkan kamera yang aktif ke browser. Silakan gunakan tombol <strong>"Foto Kamera HP"</strong> di samping kanan.
+        `;
+      }
+
+      return `
+        <strong style="color:var(--danger);">Gagal membuka Live Camera (${escapeHtml(errName || 'Error')}):</strong> ${escapeHtml(errMsg)}<br>
+        Gunakan tombol <strong>"Foto Kamera HP"</strong> di samping kanan sebagai jalur alternatif langsung ke aplikasi kamera Android.
+      `;
+    }
+
+    async function toggleLensCamera() {
+      if (lensStream) {
+        stopLensCamera();
+        return;
+      }
+
+      hideCropPanel();
+      resetLensFeedback();
+      const btn = document.getElementById('btnStartLensCam');
+      const note = document.getElementById('lensNote');
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        note.innerHTML = diagnoseAndroidCameraError({ name: 'SecurityError', message: 'navigator.mediaDevices tidak tersedia' });
+        return;
+      }
+
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Membuka Smart Lens...';
+        lensStream = await requestAndroidResilientStream();
+
+        const video = document.getElementById('lensVideo');
+        video.setAttribute('playsinline', '');
+        video.setAttribute('autoplay', '');
+        video.muted = true;
+        video.srcObject = lensStream;
+        await video.play();
+
+        document.getElementById('lensViewport').style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Hentikan Kamera';
+        note.innerHTML = 'QR &amp; Barcode terdeteksi otomatis. Untuk membaca <strong>teks label (Merk, Model, SN)</strong>, tekan <strong>"Bidik &amp; Baca Semua"</strong>.';
+
+        setupLensHardwareControls();
+        startRealtimeBarcodeLoop();
+      } catch (err) {
+        stopLensCamera();
+        note.innerHTML = diagnoseAndroidCameraError(err);
+      }
+    }
+
+    function setupLensHardwareControls() {
+      const ctrl = document.getElementById('lensZoomControls');
+      const torchBtn = document.getElementById('btnLensTorch');
+      const slider = document.getElementById('lensZoomSlider');
+      ctrl.style.display = 'none';
+      torchBtn.style.display = 'none';
+      lensTorchOn = false;
+      torchBtn.classList.remove('on');
+
+      try {
+        const track = lensStream ? lensStream.getVideoTracks()[0] : null;
+        if (!track || !track.getCapabilities) return;
+        const caps = track.getCapabilities();
+        if (caps.zoom) {
+          slider.min = caps.zoom.min || 1;
+          slider.max = Math.min(caps.zoom.max || 4, 5);
+          slider.step = caps.zoom.step || 0.2;
+          slider.value = Math.min(1.4, Number(slider.max));
+          document.getElementById('lensZoomVal').textContent = Number(slider.value).toFixed(1) + 'x';
+          applyLensZoom(slider.value);
+          ctrl.style.display = 'flex';
+        }
+        if (caps.torch) {
+          torchBtn.style.display = 'inline-block';
+        }
+      } catch (e) {}
+    }
+
+    async function applyLensZoom(val) {
+      document.getElementById('lensZoomVal').textContent = Number(val).toFixed(1) + 'x';
+      try {
+        const track = lensStream ? lensStream.getVideoTracks()[0] : null;
+        if (track) await track.applyConstraints({ advanced: [{ zoom: Number(val) }] });
+      } catch (e) {}
+    }
+
+    async function toggleLensTorch() {
+      try {
+        const track = lensStream ? lensStream.getVideoTracks()[0] : null;
+        if (!track) return;
+        lensTorchOn = !lensTorchOn;
+        await track.applyConstraints({ advanced: [{ torch: lensTorchOn }] });
+        document.getElementById('btnLensTorch').classList.toggle('on', lensTorchOn);
+      } catch (e) {}
+    }
+
+    function stopLensCamera() {
+      if (lensDetectTimer) {
+        clearInterval(lensDetectTimer);
+        lensDetectTimer = null;
+      }
+      if (lensStream) {
+        lensStream.getTracks().forEach(t => t.stop());
+        lensStream = null;
+      }
+      lensTorchOn = false;
+      const video = document.getElementById('lensVideo');
+      if (video) video.srcObject = null;
+      const vp = document.getElementById('lensViewport');
+      if (vp) vp.style.display = 'none';
+      const ctrl = document.getElementById('lensZoomControls');
+      if (ctrl) ctrl.style.display = 'none';
+      const overlay = document.getElementById('lensOverlayCanvas');
+      if (overlay) {
+        const ctx = overlay.getContext('2d');
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+      }
+      const btn = document.getElementById('btnStartLensCam');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Buka Kamera Lens';
+      }
+    }
+
+    function getReticleCropMetrics(videoEl) {
+      const reticle = document.getElementById('lensReticle');
+      const vRect = videoEl.getBoundingClientRect();
+      const rRect = reticle.getBoundingClientRect();
+
+      const dispW = vRect.width;
+      const dispH = vRect.height;
+      const natW = videoEl.videoWidth;
+      const natH = videoEl.videoHeight;
+
+      const scale = Math.max(dispW / natW, dispH / natH);
+      const visW = dispW / scale;
+      const visH = dispH / scale;
+      const offsetX = (natW - visW) / 2;
+      const offsetY = (natH - visH) / 2;
+
+      const sx = Math.max(0, offsetX + ((rRect.left - vRect.left) / scale));
+      const sy = Math.max(0, offsetY + ((rRect.top - vRect.top) / scale));
+      const sw = Math.min(natW - sx, rRect.width / scale);
+      const sh = Math.min(natH - sy, rRect.height / scale);
+
+      return { sx, sy, sw, sh, scale, offsetX, offsetY, dispW, dispH };
+    }
+
+    function startRealtimeBarcodeLoop() {
+      if (lensDetectTimer) clearInterval(lensDetectTimer);
+
+      if ('BarcodeDetector' in window && !nativeBarcodeDetector) {
+        try {
+          nativeBarcodeDetector = new BarcodeDetector({
+            formats: ['qr_code', 'code_128', 'code_39', 'code_93', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'itf', 'codabar', 'data_matrix', 'pdf417']
+          });
+        } catch (e) {
+          nativeBarcodeDetector = null;
+        }
+      }
+
+      const probeCanvas = document.createElement('canvas');
+      let busy = false;
+
+      lensDetectTimer = setInterval(async () => {
+        if (!lensStream || busy) return;
+        const video = document.getElementById('lensVideo');
+        if (!video || !video.videoWidth || video.readyState < 2) return;
+
+        busy = true;
+        try {
+          const m = getReticleCropMetrics(video);
+          probeCanvas.width = Math.round(m.sw);
+          probeCanvas.height = Math.round(m.sh);
+          const pCtx = probeCanvas.getContext('2d');
+          pCtx.drawImage(video, m.sx, m.sy, m.sw, m.sh, 0, 0, probeCanvas.width, probeCanvas.height);
+
+          const overlay = document.getElementById('lensOverlayCanvas');
+          overlay.width = Math.round(m.dispW);
+          overlay.height = Math.round(m.dispH);
+          const oCtx = overlay.getContext('2d');
+          oCtx.clearRect(0, 0, overlay.width, overlay.height);
+
+          if (nativeBarcodeDetector) {
+            const barcodes = await nativeBarcodeDetector.detect(probeCanvas);
+            if (barcodes && barcodes.length > 0) {
+              const best = barcodes[0];
+              const rawVal = (best.rawValue || '').trim();
+              if (rawVal) {
+                if (best.boundingBox) {
+                  const bx = ((m.sx + best.boundingBox.x) - m.offsetX) * m.scale;
+                  const by = ((m.sy + best.boundingBox.y) - m.offsetY) * m.scale;
+                  const bw = best.boundingBox.width * m.scale;
+                  const bh = best.boundingBox.height * m.scale;
+                  oCtx.strokeStyle = '#34d399';
+                  oCtx.lineWidth = 3;
+                  oCtx.fillStyle = 'rgba(52, 211, 153, 0.16)';
+                  oCtx.beginPath();
+                  oCtx.roundRect ? oCtx.roundRect(bx, by, bw, bh, 6) : oCtx.rect(bx, by, bw, bh);
+                  oCtx.fill();
+                  oCtx.stroke();
+                }
+
+                if (rawVal !== lastLiveCode) {
+                  lastLiveCode = rawVal;
+                  playLensFeedback();
+                  document.getElementById('lensLiveFormat').textContent = (best.format || 'QR / BARCODE').toUpperCase() + ' TERDETEKSI';
+                  document.getElementById('lensLiveValue').textContent = rawVal;
+                  document.getElementById('lensLiveToast').style.display = 'flex';
+                  document.getElementById('snResultInput').value = extractPrimarySnFromCode(rawVal);
+                  buildAndRenderSmartEntities([{ format: best.format || 'QR/Barcode', value: rawVal }], '');
+                }
+              }
+            }
+          }
+        } catch (e) {}
+        busy = false;
+      }, 240);
+    }
+
+    function useLiveDetectedCode() {
+      if (lastLiveCode) {
+        document.getElementById('snResultInput').value = extractPrimarySnFromCode(lastLiveCode);
+        applySnResult();
+      }
+    }
+
+    async function captureAndAnalyzeLens() {
+      const video = document.getElementById('lensVideo');
+      if (!video || !video.videoWidth) return;
+
+      const m = getReticleCropMetrics(video);
+      const rawCanvas = document.createElement('canvas');
+      rawCanvas.width = Math.round(m.sw);
+      rawCanvas.height = Math.round(m.sh);
+      rawCanvas.getContext('2d').drawImage(video, m.sx, m.sy, m.sw, m.sh, 0, 0, rawCanvas.width, rawCanvas.height);
+
+      stopLensCamera();
+      await runUnifiedLensPipeline(rawCanvas, lensMode === 'slit' ? 7 : 6);
+    }
+
+    // ---------- PHOTO UPLOAD + INTERACTIVE LENS CROPPER ----------
+    let cropperInitialized = false;
+    function initCropperEventsOnce() {
+      if (cropperInitialized) return;
+      cropperInitialized = true;
+
+      const box = document.getElementById('cropBox');
+      const onPointerDown = (e) => {
+        e.preventDefault();
+        const handle = e.target.dataset.handle || 'move';
+        const img = document.getElementById('cropSourceImg');
+        cropDragState = {
+          handle,
+          startX: e.clientX,
+          startY: e.clientY,
+          initRect: { ...cropRect },
+          imgW: img.clientWidth,
+          imgH: img.clientHeight
+        };
+        if (e.target.setPointerCapture) {
+          try { e.target.setPointerCapture(e.pointerId); } catch (err) {}
+        }
+      };
+
+      const onPointerMove = (e) => {
+        if (!cropDragState) return;
+        e.preventDefault();
+        const dx = e.clientX - cropDragState.startX;
+        const dy = e.clientY - cropDragState.startY;
+        const { initRect, imgW, imgH, handle } = cropDragState;
+        const minW = 44;
+        const minH = 26;
+        let { x, y, w, h } = initRect;
+
+        if (handle === 'move') {
+          x = Math.max(0, Math.min(imgW - w, x + dx));
+          y = Math.max(0, Math.min(imgH - h, y + dy));
+        } else {
+          if (handle.includes('e')) w = Math.max(minW, Math.min(imgW - x, w + dx));
+          if (handle.includes('s')) h = Math.max(minH, Math.min(imgH - y, h + dy));
+          if (handle.includes('w')) {
+            const newX = Math.max(0, Math.min(initRect.x + initRect.w - minW, initRect.x + dx));
+            w = (initRect.x + initRect.w) - newX;
+            x = newX;
+          }
+          if (handle.includes('n')) {
+            const newY = Math.max(0, Math.min(initRect.y + initRect.h - minH, initRect.y + dy));
+            h = (initRect.y + initRect.h) - newY;
+            y = newY;
+          }
+        }
+        cropRect = { x, y, w, h };
+        renderCropBox();
+      };
+
+      const onPointerUp = () => { cropDragState = null; };
+      box.addEventListener('pointerdown', onPointerDown);
+      window.addEventListener('pointermove', onPointerMove, { passive: false });
+      window.addEventListener('pointerup', onPointerUp);
+    }
+
+    function loadPhotoToLens(event) {
+      const file = event.target.files[0];
+      event.target.value = '';
+      if (!file) return;
+
+      stopLensCamera();
+      resetLensFeedback();
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = document.getElementById('cropSourceImg');
+        img.onload = function() {
+          document.getElementById('sharedCropPanel').style.display = 'block';
+          const defaultPreset = lensMode === 'slit' ? 'narrow' : (lensMode === 'qr' ? 'square' : 'full');
+          requestAnimationFrame(() => applyCropPreset(defaultPreset));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function hideCropPanel() {
+      const panel = document.getElementById('sharedCropPanel');
+      if (panel) panel.style.display = 'none';
+    }
+
+    function applyCropPreset(preset) {
+      const img = document.getElementById('cropSourceImg');
+      const imgW = img.clientWidth;
+      const imgH = img.clientHeight;
+      if (!imgW || !imgH) return;
+
+      if (preset === 'narrow') {
+        const w = Math.round(imgW * 0.88);
+        const h = Math.max(36, Math.round(imgH * 0.22));
+        cropRect = { x: Math.round((imgW - w) / 2), y: Math.round((imgH - h) / 2), w, h };
+      } else if (preset === 'square') {
+        const s = Math.max(64, Math.round(Math.min(imgW, imgH) * 0.58));
+        cropRect = { x: Math.round((imgW - s) / 2), y: Math.round((imgH - s) / 2), w: s, h: s };
+      } else {
+        cropRect = { x: 4, y: 4, w: Math.max(44, imgW - 8), h: Math.max(26, imgH - 8) };
+      }
+      renderCropBox();
+    }
+
+    function renderCropBox() {
+      const box = document.getElementById('cropBox');
+      box.style.left = cropRect.x + 'px';
+      box.style.top = cropRect.y + 'px';
+      box.style.width = cropRect.w + 'px';
+      box.style.height = cropRect.h + 'px';
+    }
+
+    async function executeLensPhotoAnalysis() {
+      const img = document.getElementById('cropSourceImg');
+      if (!img || !img.naturalWidth || !img.clientWidth) return;
+
+      const scaleX = img.naturalWidth / img.clientWidth;
+      const scaleY = img.naturalHeight / img.clientHeight;
+      const sx = Math.max(0, Math.round(cropRect.x * scaleX));
+      const sy = Math.max(0, Math.round(cropRect.y * scaleY));
+      const sw = Math.min(img.naturalWidth - sx, Math.round(cropRect.w * scaleX));
+      const sh = Math.min(img.naturalHeight - sy, Math.round(cropRect.h * scaleY));
+
+      const rawCanvas = document.createElement('canvas');
+      rawCanvas.width = sw;
+      rawCanvas.height = sh;
+      rawCanvas.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+
+      const psm = (sw / Math.max(sh, 1)) > 3.2 ? 7 : 6;
+      await runUnifiedLensPipeline(rawCanvas, psm);
+    }
+
+    // ---------- UNIFIED PIPELINE: DECODE BARCODES/QR + OCR TEXT SIMULTANEOUSLY ----------
+    async function decodeCodesFromCanvas(sourceCanvas) {
+      const found = [];
+      const pushUnique = (format, value) => {
+        const clean = String(value || '').trim();
+        if (clean && !found.some(item => item.value === clean)) {
+          found.push({ format: format || 'CODE', value: clean });
+        }
+      };
+
+      if ('BarcodeDetector' in window) {
+        try {
+          if (!nativeBarcodeDetector) {
+            nativeBarcodeDetector = new BarcodeDetector({
+              formats: ['qr_code', 'code_128', 'code_39', 'code_93', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'itf', 'codabar', 'data_matrix', 'pdf417']
+            });
+          }
+          const res = await nativeBarcodeDetector.detect(sourceCanvas);
+          (res || []).forEach(b => pushUnique(b.format, b.rawValue));
+        } catch (e) {}
+      }
+
+      if (found.length === 0 && typeof Html5Qrcode !== 'undefined') {
+        try {
+          if (!html5QrFileInstance) {
+            html5QrFileInstance = new Html5Qrcode('lensOverlayCanvas', {
+              formatsToSupport: [
+                Html5QrcodeSupportedFormats.QR_CODE,
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.CODE_39,
+                Html5QrcodeSupportedFormats.CODE_93,
+                Html5QrcodeSupportedFormats.CODABAR,
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.ITF,
+                Html5QrcodeSupportedFormats.DATA_MATRIX,
+                Html5QrcodeSupportedFormats.PDF_417
+              ]
+            });
+          }
+          const pad = 24;
+          const qCanvas = document.createElement('canvas');
+          qCanvas.width = sourceCanvas.width + pad * 2;
+          qCanvas.height = sourceCanvas.height + pad * 2;
+          const qCtx = qCanvas.getContext('2d');
+          qCtx.fillStyle = '#ffffff';
+          qCtx.fillRect(0, 0, qCanvas.width, qCanvas.height);
+          qCtx.drawImage(sourceCanvas, pad, pad);
+
+          const blob = await new Promise(resolve => qCanvas.toBlob(resolve, 'image/png'));
+          const f = new File([blob], 'lens_scan.png', { type: 'image/png' });
+          const text = await html5QrFileInstance.scanFile(f, false);
+          pushUnique('QR / BARCODE', text);
+        } catch (e) {}
+      }
+
+      return found;
+    }
+
+    function buildEnhancedOcrCanvas(sourceCanvas) {
+      const sw = sourceCanvas.width;
+      const sh = sourceCanvas.height;
+      let factor = 1;
+      if (sh < 140) factor = Math.min(3, 160 / Math.max(sh, 1));
+      else if (sw > 1400) factor = 1400 / sw;
+
+      const dw = Math.round(sw * factor);
+      const dh = Math.round(sh * factor);
+      const pad = 16;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = dw + pad * 2;
+      canvas.height = dh + pad * 2;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(sourceCanvas, 0, 0, sw, sh, pad, pad, dw, dh);
+
+      const imgData = ctx.getImageData(pad, pad, dw, dh);
+      const d = imgData.data;
+      const contrast = 1.42;
+      const intercept = 128 * (1 - contrast);
+      for (let i = 0; i < d.length; i += 4) {
+        const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+        const adj = Math.max(0, Math.min(255, gray * contrast + intercept));
+        d[i] = d[i + 1] = d[i + 2] = adj;
+      }
+      ctx.putImageData(imgData, pad, pad);
+      return canvas;
+    }
+
+    async function runUnifiedLensPipeline(rawCanvas, psmMode) {
+      const statusEl = document.getElementById('ocrStatusText');
+      const progWrap = document.getElementById('ocrProgressWrap');
+      const progBar = document.getElementById('ocrProgressBar');
+
+      const previewUrl = rawCanvas.toDataURL('image/png');
+      document.getElementById('croppedStripImg').src = previewUrl;
+      document.getElementById('croppedStripWrap').style.display = 'block';
+
+      progWrap.style.display = 'block';
+      progBar.style.width = '15%';
+      statusEl.textContent = 'Smart Lens memindai QR, Barcode, dan Teks secara bersamaan...';
+
+      const codes = await decodeCodesFromCanvas(rawCanvas);
+      progBar.style.width = '35%';
+
+      let rawOcrText = '';
+      if (typeof Tesseract !== 'undefined') {
+        try {
+          const ocrCanvas = buildEnhancedOcrCanvas(rawCanvas);
+          const ocrDataUrl = ocrCanvas.toDataURL('image/png');
+          const worker = await Tesseract.createWorker('eng', 1, {
+            logger: m => {
+              if (m.status === 'recognizing text') {
+                const pct = 35 + Math.round((m.progress || 0) * 65);
+                progBar.style.width = pct + '%';
+                statusEl.textContent = 'Smart Lens membaca teks & spesifikasi... ' + pct + '%';
+              }
+            }
+          });
+          await worker.setParameters({
+            tessedit_pageseg_mode: String(psmMode || 6)
+          });
+          const res = await worker.recognize(ocrDataUrl);
+          await worker.terminate();
+          rawOcrText = (res && res.data && res.data.text) ? res.data.text : '';
+        } catch (err) {
+          console.error('OCR error:', err);
+        }
+      }
+
+      progBar.style.width = '100%';
+      playLensFeedback();
+      buildAndRenderSmartEntities(codes, rawOcrText);
+
+      if (detectedEntities.length > 0) {
+        statusEl.textContent = `Selesai! Smart Lens menemukan ${detectedEntities.length} informasi. Ketuk tombol pada item atau klik "Terapkan Semua".`;
+      } else if (rawOcrText.trim()) {
+        statusEl.textContent = 'Teks terbaca (lihat kotak Teks Lengkap di bawah).';
+      } else {
+        statusEl.textContent = 'Belum ada QR/Barcode/Teks yang jelas. Coba geser kotak fokus lebih dekat ke tulisan atau nyalakan Senter.';
+      }
+    }
+
+    function extractPrimarySnFromCode(codeVal) {
+      const s = String(codeVal || '').trim();
+      if (s.startsWith('{') && s.endsWith('}')) {
+        try {
+          const obj = JSON.parse(s);
+          const snKey = Object.keys(obj).find(k => /^(sn|serial|serial_number|imei)$/i.test(k));
+          if (snKey && obj[snKey]) return String(obj[snKey]).trim();
+        } catch (e) {}
+      }
+      const m = s.match(/(?:S\/N|SN|SERIAL|IMEI)\s*[:=#\-]\s*([A-Za-z0-9\-]{4,35})/i);
+      if (m) return m[1];
+      return s;
+    }
+
+    function buildAndRenderSmartEntities(codes, rawText) {
+      const entities = [];
+      const addEntity = (type, tagClass, label, value, targetField, extra) => {
+        const clean = String(value || '').trim();
+        if (!clean) return;
+        if (entities.some(e => e.type === type && e.value.toLowerCase() === clean.toLowerCase())) return;
+        entities.push({ type, tagClass, label, value: clean, targetField, extra: extra || '' });
+      };
+
+      codes.forEach(c => {
+        const val = c.value;
+        const fmt = String(c.format || 'QR/BARCODE').toUpperCase();
+
+        if (val.startsWith('{') && val.endsWith('}')) {
+          try {
+            const obj = JSON.parse(val);
+            Object.entries(obj).forEach(([k, v]) => {
+              if (!v) return;
+              if (/sn|serial|imei/i.test(k)) addEntity('sn', 'tag-sn', 'Serial Number (QR)', v, 'sn');
+              else if (/merk|brand/i.test(k)) addEntity('brand', 'tag-brand', 'Merk (QR)', v, 'merk');
+              else if (/model|tipe|type/i.test(k)) addEntity('model', 'tag-model', 'Model (QR)', v, 'model');
+              else addEntity('spec', 'tag-spec', k, v, 'spek');
+            });
+            return;
+          } catch (e) {}
+        }
+
+        if (/^https?:\/\//i.test(val)) {
+          addEntity('url', 'tag-url', 'Tautan URL (' + fmt + ')', val, 'catatan');
+        } else if (/^WIFI:/i.test(val)) {
+          const ssid = (val.match(/S:([^;]+)/) || [])[1] || '';
+          const pass = (val.match(/P:([^;]+)/) || [])[1] || '';
+          addEntity('spec', 'tag-spec', 'Wi-Fi QR', `SSID: ${ssid}${pass ? ' | Pass: ' + pass : ''}`, 'catatan');
+        } else {
+          addEntity('qr', 'tag-qr', fmt, val, 'sn');
+        }
+      });
+
+      const combinedText = [codes.map(c => c.value).join('\n'), rawText].filter(Boolean).join('\n');
+
+      for (const item of KNOWN_BRANDS) {
+        const rx = new RegExp('\\b' + item.name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '\\b', 'i');
+        if (rx.test(combinedText)) {
+          const brandName = item.brand || item.name;
+          addEntity('brand', 'tag-brand', 'Merk Terdeteksi', brandName, 'merk', item.unit || '');
+          break;
+        }
+      }
+
+      const modelRegex = /(?:MODEL(?:\s*NO\.?|\s*NAME)?|M\/N|P\/N|PART\s*NO\.?|PRODUCT\s*NO\.?|TYPE)\s*[:#\-]?\s*([A-Za-z0-9][A-Za-z0-9\-\/\s]{2,28})/gi;
+      let mMatch;
+      while ((mMatch = modelRegex.exec(combinedText)) !== null) {
+        const candidateModel = mMatch[1].split(/\r?\n/)[0].trim();
+        if (candidateModel.length >= 3 && candidateModel.length <= 32) {
+          addEntity('model', 'tag-model', 'Model / Part No', candidateModel, 'model');
+        }
+      }
+
+      const snRegex = /(?:S\/N|SN|SERIAL(?:\s*NO\.?|\s*NUMBER)?|IMEI\d?|SERVICE\s*TAG|ST)\s*[:#\-]?\s*([A-Za-z0-9\-]{5,30})/gi;
+      let sMatch;
+      while ((sMatch = snRegex.exec(combinedText)) !== null) {
+        addEntity('sn', 'tag-sn', 'Serial Number / IMEI', sMatch[1], 'sn');
+      }
+
+      const macRegex = /\b([0-9A-Fa-f]{2}(?:[:\-][0-9A-Fa-f]{2}){5})\b/g;
+      let macMatch;
+      while ((macMatch = macRegex.exec(combinedText)) !== null) {
+        addEntity('spec', 'tag-spec', 'MAC Address', macMatch[1].toUpperCase(), 'spek');
+      }
+
+      if (!entities.some(e => e.type === 'sn' || e.type === 'qr') && rawText) {
+        const tokens = rawText.split(/[\s,;()\[\]]+/);
+        tokens.forEach(tok => {
+          const clean = tok.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, '');
+          if (/^[A-Za-z0-9\-]{6,26}$/.test(clean) && /\d/.test(clean) && /[A-Za-z]/.test(clean)) {
+            addEntity('sn', 'tag-sn', 'Kandidat Kode / SN', clean, 'sn');
+          }
+        });
+      }
+
+      detectedEntities = entities;
+
+      const bestSn = entities.find(e => e.type === 'sn' || e.type === 'qr');
+      if (bestSn) {
+        document.getElementById('snResultInput').value = bestSn.value;
+      }
+
+      renderLensResultsPanel(rawText);
+    }
+
+    function renderLensResultsPanel(rawText) {
+      const panel = document.getElementById('lensResultsPanel');
+      const listEl = document.getElementById('lensEntityList');
+      const applyAllBtn = document.getElementById('btnApplyAllEntities');
+      const rawBox = document.getElementById('lensRawBox');
+      const rawTa = document.getElementById('lensRawTextarea');
+
+      const hasRaw = Boolean((rawText || '').trim());
+      if (detectedEntities.length === 0 && !hasRaw) {
+        panel.style.display = 'none';
+        return;
+      }
+
+      panel.style.display = 'block';
+      applyAllBtn.style.display = detectedEntities.length > 0 ? 'inline-block' : 'none';
+
+      listEl.innerHTML = detectedEntities.map((ent, idx) => {
+        let buttonsHtml = '';
+        if (ent.type === 'url') {
+          buttonsHtml = `
+            <a href="${escapeHtml(ent.value)}" target="_blank" class="btn-chip-act" style="text-decoration:none;">Buka Link</a>
+            <button type="button" class="btn-chip-act" onclick="assignEntityToField(${idx}, 'catatan', this)">+ Catatan</button>
+          `;
+        } else if (ent.type === 'brand') {
+          buttonsHtml = `
+            <button type="button" class="btn-chip-act" onclick="assignEntityToField(${idx}, 'merk', this)">Isi Merk</button>
+            ${ent.extra ? `<button type="button" class="btn-chip-act" onclick="assignEntityToField(${idx}, 'tipe', this)">Set ${escapeHtml(ent.extra)}</button>` : ''}
+          `;
+        } else if (ent.type === 'model') {
+          buttonsHtml = `
+            <button type="button" class="btn-chip-act" onclick="assignEntityToField(${idx}, 'model', this)">Isi Model</button>
+            <button type="button" class="btn-chip-act" onclick="assignEntityToField(${idx}, 'sn', this)">Jadi SN</button>
+          `;
+        } else if (ent.type === 'spec') {
+          buttonsHtml = `
+            <button type="button" class="btn-chip-act" onclick="assignEntityToField(${idx}, 'spek', this)">+ Spesifikasi</button>
+            <button type="button" class="btn-chip-act" onclick="assignEntityToField(${idx}, 'catatan', this)">+ Catatan</button>
+          `;
+        } else {
+          buttonsHtml = `
+            <button type="button" class="btn-chip-act" onclick="assignEntityToField(${idx}, 'sn', this)">Isi SN</button>
+            <button type="button" class="btn-chip-act" onclick="assignEntityToField(${idx}, 'model', this)">Isi Model</button>
+            <button type="button" class="btn-chip-act" onclick="assignEntityToField(${idx}, 'catatan', this)">+ Catatan</button>
+          `;
+        }
+
+        return `
+          <div class="lens-entity-row">
+            <div class="lens-entity-info">
+              <span class="lens-entity-tag ${ent.tagClass}">${escapeHtml(ent.label)}</span>
+              <div class="lens-entity-val">${escapeHtml(ent.value)}</div>
+            </div>
+            <div class="lens-entity-actions">${buttonsHtml}</div>
+          </div>
+        `;
+      }).join('');
+
+      if (hasRaw) {
+        rawBox.style.display = 'block';
+        rawTa.value = rawText.trim();
+      } else {
+        rawBox.style.display = 'none';
+      }
+    }
+
+    function assignEntityToField(idx, field, btnEl) {
+      const ent = detectedEntities[idx];
+      if (!ent || !activeSnUid) return;
+      const card = document.getElementById(activeSnUid);
+      if (!card) return;
+
+      if (field === 'sn') {
+        document.getElementById('snResultInput').value = ent.value;
+        const snInput = document.getElementById('sn_' + activeSnUid);
+        if (snInput) snInput.value = ent.value;
+      } else if (field === 'merk') {
+        const merkInput = card.querySelector('.u-merk');
+        if (merkInput) merkInput.value = ent.value;
+      } else if (field === 'model') {
+        const modelInput = card.querySelector('.u-model');
+        if (modelInput) modelInput.value = ent.value;
+      } else if (field === 'tipe' && ent.extra) {
+        const tipeSel = card.querySelector('.u-tipe');
+        if (tipeSel) setSelectIgnoreCase(tipeSel, ent.extra);
+      } else if (field === 'spek') {
+        const spekInput = card.querySelector('.u-spek');
+        if (spekInput) {
+          const prefix = ent.label === 'MAC Address' ? 'MAC: ' : '';
+          const addText = prefix + ent.value;
+          spekInput.value = spekInput.value ? (spekInput.value + ' | ' + addText) : addText;
+        }
+      } else if (field === 'catatan') {
+        const catInput = card.querySelector('.u-catatan');
+        if (catInput) {
+          catInput.value = catInput.value ? (catInput.value + ' | ' + ent.value) : ent.value;
+        }
+      }
+
+      if (btnEl) {
+        btnEl.classList.add('applied');
+        btnEl.textContent = 'Terisi';
+      }
+    }
+
+    function applyAllDetectedEntities() {
+      if (!activeSnUid) return;
+      const card = document.getElementById(activeSnUid);
+      if (!card) return;
+
+      const snEnt = detectedEntities.find(e => e.type === 'sn' || e.type === 'qr');
+      const brandEnt = detectedEntities.find(e => e.type === 'brand');
+      const modelEnt = detectedEntities.find(e => e.type === 'model');
+      const specEnts = detectedEntities.filter(e => e.type === 'spec');
+
+      if (snEnt) {
+        document.getElementById('snResultInput').value = snEnt.value;
+        const snInput = document.getElementById('sn_' + activeSnUid);
+        if (snInput) snInput.value = snEnt.value;
+      }
+      if (brandEnt) {
+        const merkInput = card.querySelector('.u-merk');
+        if (merkInput && !merkInput.value.trim()) merkInput.value = brandEnt.value;
+        if (brandEnt.extra) {
+          const tipeSel = card.querySelector('.u-tipe');
+          if (tipeSel) setSelectIgnoreCase(tipeSel, brandEnt.extra);
+        }
+      }
+      if (modelEnt) {
+        const modelInput = card.querySelector('.u-model');
+        if (modelInput && !modelInput.value.trim()) modelInput.value = modelEnt.value;
+      }
+      if (specEnts.length > 0) {
+        const spekInput = card.querySelector('.u-spek');
+        if (spekInput) {
+          const specText = specEnts.map(s => (s.label === 'MAC Address' ? 'MAC: ' : '') + s.value).join(' | ');
+          spekInput.value = spekInput.value ? (spekInput.value + ' | ' + specText) : specText;
+        }
+      }
+
+      closeSnModal();
+    }
+
+    function copyRawLensText() {
+      const ta = document.getElementById('lensRawTextarea');
+      if (!ta || !ta.value) return;
+      ta.select();
+      try {
+        navigator.clipboard ? navigator.clipboard.writeText(ta.value) : document.execCommand('copy');
+        document.getElementById('ocrStatusText').textContent = 'Teks lengkap berhasil disalin ke clipboard.';
+      } catch (e) {}
+    }
+
+    function applySnResult() {
+      const val = document.getElementById('snResultInput').value.trim();
+      if (activeSnUid) {
+        const target = document.getElementById('sn_' + activeSnUid);
+        if (target) target.value = val;
+      }
+      closeSnModal();
+    }
+
+    // ======================================================
+    // TAMBAH KARYAWAN BARU
+    // ======================================================
+    function openEmpModal() {
+      document.getElementById('newEmpPT').value = document.getElementById('selPT').value;
+      onSelectNewEmpPT(document.getElementById('selLokasi').value);
+      document.getElementById('newEmpDivisi').value = document.getElementById('selDivisi').value;
+      document.getElementById('empModal').style.display = 'flex';
+    }
+
+    function openEmpModalWithName(prefillName) {
+      document.getElementById('empDropdownList').style.display = 'none';
+      document.getElementById('newEmpNama').value = prefillName || '';
+      openEmpModal();
+    }
+
+    function closeEmpModal() { document.getElementById('empModal').style.display = 'none'; }
+
+    async function saveNewEmployee() {
+      const nama = document.getElementById('newEmpNama').value.trim();
+      if (!nama) { alert('Nama karyawan wajib diisi.'); return; }
+
+      const empData = {
+        id: document.getElementById('newEmpId').value.trim(),
+        nama: nama,
+        pt: document.getElementById('newEmpPT').value,
+        lokasi: document.getElementById('newEmpLokasi').value,
+        divisi: document.getElementById('newEmpDivisi').value,
+        status: 'Aktif'
+      };
+
+      const btn = document.getElementById('btnSaveEmp');
+      btn.disabled = true; btn.textContent = 'Menyimpan...';
+
+      const onDone = (newEmp) => {
+        MASTER.employees.push(newEmp);
+        localStorage.setItem(STORAGE_KEY_MASTER, JSON.stringify(MASTER));
+        document.getElementById('empCountBadge').textContent = MASTER.employees.length + ' Data';
+        selectEmployee(newEmp.id);
+        document.getElementById('newEmpId').value = '';
+        document.getElementById('newEmpNama').value = '';
+        closeEmpModal();
+        btn.disabled = false; btn.textContent = 'Simpan & Pilih Karyawan';
+      };
+
+      if (IS_APPS_SCRIPT_HOST) {
+        google.script.run.withSuccessHandler(onDone).withFailureHandler(err => {
+          btn.disabled = false; btn.textContent = 'Simpan & Pilih Karyawan';
+          showError(err.message || err);
+        }).addNewEmployee(empData);
+        return;
+      }
+
+      const url = getApiUrl();
+      const pin = getApiPin();
+      if (!url || !pin) {
+        btn.disabled = false; btn.textContent = 'Simpan & Pilih Karyawan';
+        document.getElementById('apiConfigBox').style.display = 'block';
+        alert('Isi dulu URL Web App dan PIN Rahasia Tim IT di kotak biru bagian atas.');
+        return;
+      }
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'addNewEmployee', key: pin, data: empData })
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Gagal menambah karyawan');
+        onDone(json.employee);
+      } catch (err) {
+        btn.disabled = false; btn.textContent = 'Simpan & Pilih Karyawan';
+        showError(err.message || err);
+      }
+    }
+
+    // ======================================================
+    // SUBMIT MULTI-UNIT & ANTREAN OFFLINE
+    // ======================================================
+    function setSubmitButtonsState(disabled, text) {
+      ['btnSubmitMobile', 'btnSubmitDesktop'].forEach(id => {
+        const b = document.getElementById(id);
+        if (b) { b.disabled = disabled; b.textContent = text; }
+      });
+    }
+
+    async function submitAll() {
+      const url = getApiUrl();
+      const pin = getApiPin();
+      if (!IS_APPS_SCRIPT_HOST && (!url || !pin)) {
+        document.getElementById('apiConfigBox').style.display = 'block';
+        alert('Tempelkan dulu URL Web App dan PIN Rahasia Tim IT di kotak biru bagian atas.');
+        return;
+      }
+
+      const cards = document.querySelectorAll('.unit-card');
+      const units = [];
+      let totalPhotos = 0;
+
+      for (const card of cards) {
+        const merk = card.querySelector('.u-merk').value.trim();
+        const model = card.querySelector('.u-model').value.trim();
+        if (!merk || !model) {
+          alert('Kolom Merk dan Model/Tipe wajib diisi di setiap kartu unit.');
+          return;
+        }
+        const photoList = (UNIT_PHOTOS[card.id] || []).map(p => p.dataUrl);
+        totalPhotos += photoList.length;
+
+        units.push({
+          tipeUnit: card.querySelector('.u-tipe').value,
+          merk: merk,
+          model: model,
+          serialNumber: card.querySelector('.u-sn').value.trim(),
+          spesifikasi: card.querySelector('.u-spek').value.trim(),
+          kelengkapan: card.querySelector('.u-kelengkapan').value.trim(),
+          kondisi: card.querySelector('.u-kondisi').value,
+          status: card.querySelector('.u-status').value,
+          tanggalBeli: card.querySelector('.u-tglbeli').value,
+          harga: card.querySelector('.u-harga').value,
+          akhirGaransi: card.querySelector('.u-garansi').value,
+          catatan: card.querySelector('.u-catatan').value.trim(),
+          photos: photoList
+        });
+      }
+
+      const emp = (MASTER.employees || []).find(e => e.id === selectedEmpId);
+      const picVal = document.getElementById('txtPIC').value.trim();
+      if (picVal) localStorage.setItem(STORAGE_KEY_PIC, picVal);
+
+      const payload = {
+        idPemegang: selectedEmpId,
+        namaPemegang: emp ? emp.nama : '',
+        pt: document.getElementById('selPT').value,
+        lokasi: document.getElementById('selLokasi').value,
+        divisi: document.getElementById('selDivisi').value,
+        pic: picVal,
+        units: units
+      };
+
+      setSubmitButtonsState(true, `Mengunggah (${totalPhotos} Foto)...`);
+
+      const onSaveSuccess = (json) => {
+        setSubmitButtonsState(false, 'Simpan Semua Unit');
+        showSuccess(`<strong>Berhasil menyimpan ${json.count} unit (${json.totalPhotos ?? totalPhotos} foto)!</strong><br>Kode Aset: <b>${json.codes.join(', ')}</b><br>Folder Drive: <a href="${json.folderUrl}" target="_blank">${escapeHtml(json.folderPath)}</a>`);
+        resetUnitCards();
+      };
+
+      if (IS_APPS_SCRIPT_HOST) {
+        google.script.run.withSuccessHandler(onSaveSuccess).withFailureHandler(err => {
+          setSubmitButtonsState(false, 'Simpan Semua Unit');
+          showError('Gagal menyimpan: ' + (err.message || err));
+        }).saveMultiInventory(payload);
+        return;
+      }
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'saveMultiInventory', key: pin, data: payload })
+        });
+        const json = await res.json();
+        if (!json.success) {
+          const errMsg = json.error || 'Gagal menyimpan data';
+          if (/PIN|ditolak/i.test(errMsg)) {
+            setSubmitButtonsState(false, 'Simpan Semua Unit');
+            document.getElementById('apiConfigBox').style.display = 'block';
+            showError(errMsg + ' Silakan periksa kembali PIN Tim IT di atas lalu tekan Simpan Semua Unit.');
+            return;
+          }
+          throw new Error(errMsg);
+        }
+        onSaveSuccess(json);
+      } catch (err) {
+        setSubmitButtonsState(false, 'Simpan Semua Unit');
+        try {
+          const queue = JSON.parse(localStorage.getItem(STORAGE_KEY_QUEUE) || '[]');
+          queue.push(payload);
+          localStorage.setItem(STORAGE_KEY_QUEUE, JSON.stringify(queue));
+          updateQueueBanner();
+          showError('Koneksi gagal/offline (' + (err.message || err) + '). Data & ' + totalPhotos + ' foto diamankan ke Antrean Offline perangkat.');
+          resetUnitCards();
+        } catch (storageErr) {
+          showError('Koneksi gagal dan memori offline browser penuh karena ukuran foto. Pastikan sinyal aktif lalu klik Simpan Semua Unit lagi.');
+        }
+      }
+    }
+
+    function resetUnitCards() {
+      document.getElementById('unitsContainer').innerHTML = '';
+      unitSeq = 0;
+      UNIT_PHOTOS = {};
+      addUnitCard();
+    }
+
+    function updateQueueBanner() {
+      const queue = JSON.parse(localStorage.getItem(STORAGE_KEY_QUEUE) || '[]');
+      const box = document.getElementById('offlineQueueBox');
+      if (queue.length > 0) {
+        document.getElementById('queueCount').textContent = queue.length;
+        box.style.display = 'block';
+      } else {
+        box.style.display = 'none';
+      }
+    }
+
+    async function syncOfflineQueue() {
+      const url = getApiUrl();
+      const pin = getApiPin();
+      if (!url || !pin) {
+        document.getElementById('apiConfigBox').style.display = 'block';
+        showError('Isi URL Web App & PIN Tim IT terlebih dahulu untuk mengirim antrean offline.');
+        return;
+      }
+      const queue = JSON.parse(localStorage.getItem(STORAGE_KEY_QUEUE) || '[]');
+      if (queue.length === 0) return;
+
+      const btn = document.getElementById('btnSyncQueue');
+      btn.disabled = true; btn.textContent = 'Mengirim...';
+      const remaining = [];
+      let sentCount = 0;
+
+      for (const item of queue) {
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'saveMultiInventory', key: pin, data: item })
+          });
+          const json = await res.json();
+          if (json.success) sentCount += json.count;
+          else remaining.push(item);
+        } catch (e) {
+          remaining.push(item);
+        }
+      }
+
+      localStorage.setItem(STORAGE_KEY_QUEUE, JSON.stringify(remaining));
+      updateQueueBanner();
+      btn.disabled = false; btn.textContent = 'Kirim Sekarang';
+      if (sentCount > 0) showSuccess(`Berhasil mengirim ${sentCount} unit dari antrean offline ke Google Sheets & Drive!`);
+    }
+
+    function showSuccess(html) {
+      const box = document.getElementById('alertBox');
+      box.className = 'alert alert-ok';
+      box.innerHTML = html;
+      box.style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showError(msg) {
+      const box = document.getElementById('alertBox');
+      box.className = 'alert alert-err';
+      box.textContent = msg;
+      box.style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+    }
+
+    function escapeJs(str) {
+      return String(str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+  </script>
+</body>
+</html>
