@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>Inventaris Aset — Sapphire Grup</title>
+  <title>Inventaris Aset — Sapphire Grup (v4)</title>
   <!-- Library Scanner QR/Barcode (1D & 2D) dan OCR Ekstrak Teks SN -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
@@ -330,7 +330,7 @@
       background: #f8fafc;
     }
 
-    /* Html5Qrcode Live Viewport */
+    /* Html5Qrcode Auto-Detect Live Viewport */
     .h5qr-shell {
       position: relative;
       width: 100%;
@@ -339,7 +339,62 @@
       background: #0b1220;
       display: none;
       margin-bottom: 8px;
-      box-shadow: 0 4px 16px rgba(15,23,42,0.22);
+      border: 2.5px solid #1e293b;
+      box-shadow: 0 4px 18px rgba(15,23,42,0.28);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .h5qr-shell.scanning {
+      border-color: #0284c7;
+    }
+    .h5qr-shell.detected {
+      border-color: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.28), 0 4px 18px rgba(15,23,42,0.28);
+    }
+    .h5qr-top-badge.detected {
+      background: rgba(21, 128, 61, 0.94);
+      border-color: #86efac;
+      color: #ffffff;
+    }
+    .lens-auto-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 6px 10px;
+      margin-bottom: 8px;
+      font-size: 11.5px;
+      color: #334155;
+    }
+    .lens-auto-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 0;
+      user-select: none;
+    }
+    .lens-auto-toggle input { width: auto; margin: 0; }
+    .modal-inline-alert {
+      padding: 9px 11px;
+      border-radius: 7px;
+      font-size: 12px;
+      margin-bottom: 10px;
+      display: none;
+      line-height: 1.4;
+    }
+    .modal-inline-alert.err { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .modal-inline-alert.ok { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .combo-item-add {
+      background: #f0fdf4;
+      color: #166534;
+    }
+    .combo-item-add:hover {
+      background: #dcfce7;
     }
     #html5QrReader {
       width: 100%;
@@ -774,7 +829,7 @@
     <div class="header-inner">
       <div>
         <h1>Inventaris Aset — Sapphire Grup</h1>
-        <p>Multi-Unit, Google Lens Scanner (QR, Barcode &amp; Teks), Multi-Foto ke Google Drive</p>
+        <p>Multi-Unit, Auto-Detect Scanner (QR, Barcode &amp; OCR), Multi-Foto Terpisah ke Drive</p>
       </div>
       <div class="header-right">
         <span id="connBadge" class="badge-status" onclick="toggleApiBox()">Atur URL &amp; PIN</span>
@@ -869,8 +924,19 @@
           </div>
 
           <div class="field">
-            <label>Divisi</label>
-            <select id="selDivisi"></select>
+            <label>Divisi (Cari atau Ketik Divisi Baru)</label>
+            <div class="combo-wrap" id="divisiComboWrap">
+              <div class="combo-input-wrap">
+                <input type="text" id="searchDivisi" autocomplete="off"
+                  placeholder="Cari divisi atau ketik divisi baru..."
+                  onfocus="openDivisiDropdown('main')"
+                  oninput="filterDivisiDropdown('main')"
+                  onkeydown="handleDivisiKeydown(event, 'main')">
+                <button type="button" id="btnClearDivisi" class="combo-clear" title="Bersihkan divisi" onclick="clearDivisi('main')">&times;</button>
+              </div>
+              <div id="divisiDropdownList" class="combo-dropdown"></div>
+            </div>
+            <div id="divisiHint" class="helper-text">Ketik untuk mencari; jika belum ada di daftar, klik "+ Tambah Divisi Baru" agar otomatis tersimpan ke Master_Referensi.</div>
           </div>
 
           <div class="field">
@@ -923,37 +989,63 @@
         <span>Tambah Karyawan Baru</span>
         <button type="button" class="btn btn-danger" onclick="closeEmpModal()">Tutup</button>
       </div>
+      <div id="empModalAlert" class="modal-inline-alert"></div>
       <div class="field"><label>NIK / ID Karyawan (Kosongkan = Auto TMP-XXX)</label><input type="text" id="newEmpId" placeholder="Opsional"></div>
       <div class="field"><label>Nama Lengkap Karyawan *</label><input type="text" id="newEmpNama" placeholder="Nama lengkap"></div>
       <div class="field"><label>Entitas PT *</label><select id="newEmpPT" onchange="onSelectNewEmpPT()"></select></div>
       <div class="field"><label>Lokasi Kantor *</label><select id="newEmpLokasi"></select></div>
-      <div class="field"><label>Divisi *</label><select id="newEmpDivisi"></select></div>
+      <div class="field">
+        <label>Divisi * (Cari atau Ketik Divisi Baru)</label>
+        <div class="combo-wrap" id="newEmpDivisiComboWrap">
+          <div class="combo-input-wrap">
+            <input type="text" id="searchNewEmpDivisi" autocomplete="off"
+              placeholder="Cari divisi atau ketik divisi baru..."
+              onfocus="openDivisiDropdown('modal')"
+              oninput="filterDivisiDropdown('modal')"
+              onkeydown="handleDivisiKeydown(event, 'modal')">
+            <button type="button" id="btnClearNewEmpDivisi" class="combo-clear" title="Bersihkan divisi" onclick="clearDivisi('modal')">&times;</button>
+          </div>
+          <div id="newEmpDivisiDropdownList" class="combo-dropdown"></div>
+        </div>
+      </div>
       <button type="button" id="btnSaveEmp" class="btn btn-primary" onclick="saveNewEmployee()">Simpan &amp; Pilih Karyawan</button>
     </div>
   </div>
 
-  <!-- Modal Html5Qrcode + Smart Lens: Auto Deteksi QR, Barcode & Teks -->
+  <!-- Modal Auto-Detect Smart Lens (Html5Qrcode + Auto OCR) -->
   <div id="snModal" class="modal-bg">
     <div class="modal" style="max-width:540px;">
       <div class="card-title">
-        <span>Smart Lens — Html5Qrcode &amp; OCR</span>
+        <span>Smart Lens — Auto Scan QR, Barcode &amp; Teks</span>
         <button type="button" class="btn btn-danger" onclick="closeSnModal()">Tutup</button>
       </div>
 
       <!-- Mode Switcher ROI -->
       <div class="lens-mode-tabs">
-        <button type="button" id="lensTabAuto" class="tab-btn active" onclick="setLensMode('auto')">Auto Lens (Semua)</button>
-        <button type="button" id="lensTabSlit" class="tab-btn" onclick="setLensMode('slit')">Celah Sempit (SN)</button>
+        <button type="button" id="lensTabAuto" class="tab-btn active" onclick="setLensMode('auto')">Auto Lens</button>
+        <button type="button" id="lensTabSlit" class="tab-btn" onclick="setLensMode('slit')">Celah SN</button>
         <button type="button" id="lensTabQr" class="tab-btn" onclick="setLensMode('qr')">Kotak QR</button>
       </div>
 
-      <!-- Pemilih Lensa Kamera (Otomatis muncul via Html5Qrcode.getCameras() jika HP punya >1 kamera) -->
+      <!-- Kontrol Otomatisasi Scanner -->
+      <div class="lens-auto-bar">
+        <label class="lens-auto-toggle" title="Langsung masukkan kode ke kolom Serial Number & tutup scanner begitu terdeteksi">
+          <input type="checkbox" id="chkAutoApplyCode" checked>
+          Auto-Pakai saat terdeteksi
+        </label>
+        <label class="lens-auto-toggle" title="Otomatis baca teks Serial Number (OCR) berkala dari kamera live tanpa menekan tombol bidik">
+          <input type="checkbox" id="chkAutoLiveOcr" onchange="onToggleAutoLiveOcr()">
+          Auto Baca Teks (OCR)
+        </label>
+      </div>
+
+      <!-- Pemilih Lensa Kamera (Muncul setelah kamera aktif jika perangkat punya >1 lensa) -->
       <div id="camSelectBar" class="cam-select-bar">
         <select id="lensCameraSelect" onchange="onSwitchCameraDevice()"></select>
         <button type="button" class="btn btn-outline btn-sm" style="white-space:nowrap; padding:6px 10px;" onclick="cycleNextCamera()">Ganti Lensa</button>
       </div>
 
-      <!-- Banner Deteksi Real-Time dari Html5Qrcode -->
+      <!-- Banner Deteksi Real-Time -->
       <div id="lensLiveToast" class="lens-live-toast">
         <div style="min-width:0; flex:1;">
           <div style="font-size:10.5px; font-weight:700; text-transform:uppercase;" id="lensLiveFormat">QR / BARCODE TERDETEKSI</div>
@@ -962,14 +1054,14 @@
         <button type="button" class="btn btn-primary btn-sm" style="width:auto;" onclick="useLiveDetectedCode()">Pakai SN</button>
       </div>
 
-      <!-- Viewport Utama Html5Qrcode -->
+      <!-- Viewport Utama Html5Qrcode Auto-Detect -->
       <div id="lensViewport" class="h5qr-shell">
-        <div id="lensTopPill" class="h5qr-top-badge">Html5Qrcode Aktif — Arahkan ke QR / Barcode</div>
+        <div id="lensTopPill" class="h5qr-top-badge">Membuka kamera belakang...</div>
         <div id="html5QrReader" onclick="triggerTapRefocus()"></div>
         <div class="h5qr-bottom-bar">
           <button type="button" id="btnLensTorch" class="btn-lens-mini" style="display:none;" onclick="toggleLensTorch()">Senter</button>
           <button type="button" id="btnLensFocus" class="btn-lens-mini" style="display:none;" onclick="triggerTapRefocus()">Fokus</button>
-          <button type="button" id="btnLensCapture" class="btn-lens-shutter" onclick="captureAndAnalyzeLens()">Bidik &amp; Baca Teks</button>
+          <button type="button" id="btnLensCapture" class="btn-lens-shutter" onclick="captureAndAnalyzeLens()">Bidik Teks (OCR)</button>
           <button type="button" id="btnLensResume" class="btn-lens-mini" style="display:none;" onclick="resumeLiveScanner()">Lanjut Scan</button>
           <button type="button" class="btn-lens-mini danger" onclick="stopLensCamera()">Stop</button>
         </div>
@@ -978,7 +1070,7 @@
       <!-- Kontainer tersembunyi khusus scanFileV2 -->
       <div id="qrFileHiddenSlot" style="display:none;"></div>
 
-      <!-- Kontrol Hardware Zoom (Html5Qrcode getRunningTrackCameraCapabilities) -->
+      <!-- Kontrol Hardware Zoom -->
       <div id="lensZoomControls" class="cam-controls">
         <div class="zoom-row">
           <span style="font-weight:600;">Zoom:</span>
@@ -989,12 +1081,12 @@
       </div>
 
       <div id="lensNote" class="scan-note">
-        Didukung <strong>Html5Qrcode Engine</strong> (QR, Code-128, Code-39, EAN, DataMatrix) + <strong>Denoised OCR</strong> untuk membaca teks Serial Number, Merk, &amp; Model.
+        Kamera belakang otomatis aktif dan langsung mendeteksi <strong>QR Code &amp; Barcode batang</strong>. Aktifkan <strong>Auto Baca Teks</strong> atau tekan <strong>Bidik Teks</strong> untuk membaca tulisan Serial Number.
       </div>
 
-      <!-- Tombol Buka Kamera Live vs Foto Kamera HP / Galeri -->
+      <!-- Tombol Kamera Live & Jalur Cadangan Foto/Galeri -->
       <div class="grid-2">
-        <button type="button" id="btnStartLensCam" class="btn btn-primary btn-sm" onclick="toggleLensCamera()">Buka Kamera Lens</button>
+        <button type="button" id="btnStartLensCam" class="btn btn-primary btn-sm" onclick="toggleLensCamera()">Buka Kamera Belakang</button>
         <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('fileLensCam').click()">Foto Kamera HP</button>
       </div>
       <div style="margin-top:6px;">
@@ -1003,7 +1095,7 @@
       <input type="file" id="fileLensCam" accept="image/*" capture="environment" style="display:none" onchange="loadPhotoToLens(event)">
       <input type="file" id="fileLensGal" accept="image/*" style="display:none" onchange="loadPhotoToLens(event)">
 
-      <!-- Interactive Spotlight Cropper (Untuk Foto / Frame Beku) -->
+      <!-- Interactive Spotlight Cropper (Untuk Foto / Galeri) -->
       <div id="sharedCropPanel" class="crop-panel">
         <div class="crop-header">
           <span id="cropTitleText">Atur Area Fokus atau Langsung Analisis Semua</span>
@@ -1036,7 +1128,7 @@
       <div id="ocrProgressWrap" class="progress-wrap"><div id="ocrProgressBar" class="progress-bar"></div></div>
       <div id="ocrStatusText" class="helper-text" style="margin-bottom:6px;"></div>
 
-      <!-- Hasil Entitas Terdeteksi ala Google Lens (QR, SN, Merk, Model, MAC, URL, Teks) -->
+      <!-- Hasil Entitas Terdeteksi -->
       <div id="lensResultsPanel" class="lens-results-panel">
         <div class="lens-results-header">
           <span class="lens-results-title">Hasil Deteksi Smart Lens</span>
@@ -1053,7 +1145,7 @@
         </div>
       </div>
 
-      <!-- Kolom Final Serial Number (Bisa langsung diedit manual sebelum dipakai) -->
+      <!-- Kolom Final Serial Number -->
       <div style="margin-top:12px; padding-top:10px; border-top:1px solid var(--border);">
         <label>Serial Number / IMEI Terpilih (Bisa edit manual bila perlu):</label>
         <div class="row-inline">
@@ -1131,21 +1223,28 @@
 
     let MASTER = JSON.parse(localStorage.getItem(STORAGE_KEY_MASTER) || 'null') || DEFAULT_MASTER;
     let selectedEmpId = '';
+    let selectedDivisiMain = '';
+    let selectedDivisiModal = '';
     let unitSeq = 0;
     let UNIT_PHOTOS = {};
 
-    // State Html5Qrcode + Smart Lens (Multi-Camera, ROI Dynamic, Track Capabilities, Pause/Freeze OCR, ScanFileV2)
+    // State Html5Qrcode + Smart Lens Auto-Detect
     let activeSnUid = null;
     let lensMode = 'auto'; // 'auto' | 'slit' | 'qr'
     let html5QrLive = null;
     let html5QrFile = null;
     let isHtml5QrScanning = false;
     let isHtml5QrPaused = false;
+    let isStartingCamera = false;
     let availableCameras = [];
     let selectedCameraId = '';
+    let userPickedCamera = false;
     let activeTrackCaps = null;
     let lensTorchOn = false;
     let lastLiveCode = '';
+    let autoApplyTimeout = null;
+    let autoOcrInterval = null;
+    let autoOcrBusy = false;
     let detectedEntities = [];
 
     let cropRect = { x: 10, y: 10, w: 200, h: 120 };
@@ -1177,11 +1276,19 @@
         syncFromServer(true);
       }
 
-      // Tutup dropdown pencarian karyawan saat klik di luar area combobox
+      // Tutup dropdown pencarian karyawan & divisi saat klik di luar area combobox
       document.addEventListener('click', function(e) {
-        const wrap = document.getElementById('empComboWrap');
-        if (wrap && !wrap.contains(e.target)) {
+        const empWrap = document.getElementById('empComboWrap');
+        if (empWrap && !empWrap.contains(e.target)) {
           document.getElementById('empDropdownList').style.display = 'none';
+        }
+        const divWrap = document.getElementById('divisiComboWrap');
+        if (divWrap && !divWrap.contains(e.target)) {
+          document.getElementById('divisiDropdownList').style.display = 'none';
+        }
+        const modalDivWrap = document.getElementById('newEmpDivisiComboWrap');
+        if (modalDivWrap && !modalDivWrap.contains(e.target)) {
+          document.getElementById('newEmpDivisiDropdownList').style.display = 'none';
         }
       });
     };
@@ -1350,10 +1457,17 @@
 
     function initForm(data, keepUnits) {
       const uniquePts = uniqueList((data.pts || []).map(x => x.nama));
+      MASTER.divisions = uniqueList(data.divisions || []);
       fillSelect('selPT', uniquePts);
-      fillSelect('selDivisi', uniqueList(data.divisions || []));
       fillSelect('newEmpPT', uniquePts);
-      fillSelect('newEmpDivisi', uniqueList(data.divisions || []));
+
+      // Set divisi default pertama kali jika belum ada pilihan
+      if (!selectedDivisiMain && MASTER.divisions.length > 0) {
+        setDivisiValue('main', MASTER.divisions[0]);
+      }
+      if (!selectedDivisiModal && MASTER.divisions.length > 0) {
+        setDivisiValue('modal', selectedDivisiMain || MASTER.divisions[0]);
+      }
 
       onSelectPT();
       onSelectNewEmpPT();
@@ -1365,6 +1479,195 @@
         addUnitCard();
       }
       updateSummaryStats();
+    }
+
+    // ======================================================
+    // PENCARIAN DIVISI + AUTO-TAMBAH KE MASTER_REFERENSI
+    // ======================================================
+    function getDivisiElements(scope) {
+      if (scope === 'modal') {
+        return {
+          input: document.getElementById('searchNewEmpDivisi'),
+          clearBtn: document.getElementById('btnClearNewEmpDivisi'),
+          list: document.getElementById('newEmpDivisiDropdownList')
+        };
+      }
+      return {
+        input: document.getElementById('searchDivisi'),
+        clearBtn: document.getElementById('btnClearDivisi'),
+        list: document.getElementById('divisiDropdownList')
+      };
+    }
+
+    function setDivisiValue(scope, val) {
+      const clean = String(val || '').trim();
+      const els = getDivisiElements(scope);
+      if (scope === 'modal') selectedDivisiModal = clean;
+      else selectedDivisiMain = clean;
+      if (els.input) els.input.value = clean;
+      if (els.clearBtn) els.clearBtn.style.display = clean ? 'flex' : 'none';
+    }
+
+    function getDivisiValue(scope) {
+      const els = getDivisiElements(scope);
+      const typed = els.input ? els.input.value.trim() : '';
+      if (typed) return typed;
+      return scope === 'modal' ? selectedDivisiModal : selectedDivisiMain;
+    }
+
+    function clearDivisi(scope) {
+      setDivisiValue(scope, '');
+      const els = getDivisiElements(scope);
+      if (els.input) els.input.focus();
+      filterDivisiDropdown(scope);
+    }
+
+    function openDivisiDropdown(scope) {
+      filterDivisiDropdown(scope);
+      const els = getDivisiElements(scope);
+      if (els.list) els.list.style.display = 'block';
+    }
+
+    function filterDivisiDropdown(scope) {
+      const els = getDivisiElements(scope);
+      if (!els.input || !els.list) return;
+      const rawQuery = els.input.value.trim();
+      const q = rawQuery.toLowerCase();
+      if (els.clearBtn) els.clearBtn.style.display = rawQuery ? 'flex' : 'none';
+
+      const allDivs = uniqueList(MASTER.divisions || []);
+      const matches = q
+        ? allDivs.filter(d => d.toLowerCase().includes(q))
+        : allDivs;
+
+      const exactExists = rawQuery && allDivs.some(d => d.toLowerCase() === q);
+      const currentSelected = scope === 'modal' ? selectedDivisiModal : selectedDivisiMain;
+
+      let html = '';
+
+      // Jika teks yang diketik belum ada di Master_Referensi, tampilkan tombol tambah instan di paling atas!
+      if (rawQuery && !exactExists) {
+        html += `
+          <div class="combo-item combo-item-add" onclick="createAndSelectDivision('${escapeJs(rawQuery)}', '${scope}')">
+            <div class="combo-item-title" style="color:#166534;">
+              <span>+ Tambah Divisi Baru: "${escapeHtml(rawQuery)}"</span>
+              <span class="combo-tag" style="background:#bbf7d0; color:#166534;">AUTO SIMPAN</span>
+            </div>
+            <div class="combo-item-sub">Belum ada di Master_Referensi &mdash; klik untuk langsung tambahkan &amp; pilih</div>
+          </div>
+        `;
+      }
+
+      if (matches.length > 0) {
+        html += matches.map(d => `
+          <div class="combo-item ${d.toLowerCase() === (currentSelected || '').toLowerCase() ? 'active' : ''}" onclick="selectDivisi('${escapeJs(d)}', '${scope}')">
+            <div class="combo-item-title"><span>${escapeHtml(d)}</span></div>
+          </div>
+        `).join('');
+      } else if (!rawQuery) {
+        html += `<div class="combo-item" style="color:var(--muted); cursor:default;">Ketik nama divisi untuk mencari atau menambah baru...</div>`;
+      }
+
+      els.list.innerHTML = html;
+      els.list.style.display = 'block';
+    }
+
+    function selectDivisi(name, scope) {
+      setDivisiValue(scope, name);
+      const els = getDivisiElements(scope);
+      if (els.list) els.list.style.display = 'none';
+    }
+
+    function handleDivisiKeydown(event, scope) {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      const els = getDivisiElements(scope);
+      const typed = (els.input?.value || '').trim();
+      if (!typed) return;
+      const existing = (MASTER.divisions || []).find(d => d.toLowerCase() === typed.toLowerCase());
+      if (existing) {
+        selectDivisi(existing, scope);
+      } else {
+        createAndSelectDivision(typed, scope);
+      }
+    }
+
+    async function createAndSelectDivision(rawName, scope) {
+      const cleanName = String(rawName || '').trim();
+      if (!cleanName) return;
+
+      const els = getDivisiElements(scope);
+      if (els.list) els.list.style.display = 'none';
+
+      // Langsung set ke UI & cache lokal terlebih dahulu agar responsif
+      if (!MASTER.divisions.some(d => d.toLowerCase() === cleanName.toLowerCase())) {
+        MASTER.divisions.push(cleanName);
+        localStorage.setItem(STORAGE_KEY_MASTER, JSON.stringify(MASTER));
+      }
+      setDivisiValue(scope, cleanName);
+
+      const hintEl = document.getElementById('divisiHint');
+      if (scope === 'main' && hintEl) {
+        hintEl.textContent = `Menyimpan divisi baru "${cleanName}" ke Master_Referensi...`;
+        hintEl.style.color = 'var(--primary)';
+      }
+
+      const onSaved = (finalName, allDivs) => {
+        if (Array.isArray(allDivs) && allDivs.length > 0) {
+          MASTER.divisions = uniqueList(allDivs);
+          localStorage.setItem(STORAGE_KEY_MASTER, JSON.stringify(MASTER));
+        }
+        setDivisiValue(scope, finalName || cleanName);
+        if (scope === 'main' && hintEl) {
+          hintEl.textContent = `Divisi "${finalName || cleanName}" tersimpan otomatis ke Master_Referensi.`;
+          hintEl.style.color = 'var(--ok)';
+        } else if (scope === 'modal') {
+          showEmpModalAlert(`Divisi baru "${finalName || cleanName}" ditambahkan ke Master_Referensi.`, 'ok');
+        }
+      };
+
+      if (IS_APPS_SCRIPT_HOST) {
+        google.script.run
+          .withSuccessHandler(res => onSaved(res.name || cleanName, res.divisions))
+          .withFailureHandler(() => {
+            if (scope === 'main' && hintEl) {
+              hintEl.textContent = `Divisi "${cleanName}" dipilih lokal (akan ikut tersimpan saat submit).`;
+              hintEl.style.color = '#b45309';
+            }
+          })
+          .addNewDivision(cleanName);
+        return;
+      }
+
+      const url = getApiUrl();
+      const pin = getApiPin();
+      if (!url || !pin) {
+        if (scope === 'main' && hintEl) {
+          hintEl.textContent = `Divisi "${cleanName}" dipakai lokal (hubungkan URL & PIN untuk sinkronisasi ke Sheets).`;
+          hintEl.style.color = '#b45309';
+        }
+        return;
+      }
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          redirect: 'follow',
+          body: JSON.stringify({ action: 'addNewDivision', key: pin, data: { name: cleanName } })
+        });
+        const json = await res.json();
+        if (json && json.success) {
+          onSaved(json.division || cleanName, json.divisions);
+        } else {
+          throw new Error((json && json.error) || 'Gagal menambah divisi');
+        }
+      } catch (err) {
+        if (scope === 'main' && hintEl) {
+          hintEl.textContent = `Divisi "${cleanName}" siap dipakai & akan otomatis didaftarkan ke Master_Referensi saat simpan.`;
+          hintEl.style.color = '#b45309';
+        }
+      }
     }
 
     function fillSelect(id, items, preferredVal) {
@@ -1552,7 +1855,7 @@
           }
         }
         if (emp.divisi) {
-          setSelectIgnoreCase(document.getElementById('selDivisi'), emp.divisi);
+          setDivisiValue('main', emp.divisi);
         }
       } else {
         inputEl.value = '';
@@ -1650,7 +1953,7 @@
         </details>
 
         <div class="field" style="margin-top:12px;">
-          <label>Dokumentasi Foto Unit (Bisa Lebih dari 1 Foto: Unit, SN, Kelengkapan)</label>
+          <label>Dokumentasi Foto Unit (Tiap foto otomatis terpisah ke kolom Link_Foto_1, Link_Foto_2, Link_Foto_3, dst.)</label>
           <input type="file" accept="image/*" capture="environment" id="cam_${uid}" style="display:none" onchange="handlePhotoFiles(event, '${uid}')">
           <input type="file" accept="image/*" multiple id="gal_${uid}" style="display:none" onchange="handlePhotoFiles(event, '${uid}')">
           <div class="photo-actions">
@@ -1874,11 +2177,24 @@
       resetLensFeedback();
       hideCropPanel();
       document.getElementById('snModal').style.display = 'flex';
-      setLensMode(mode || 'auto');
+      setLensMode(mode || 'auto', false);
       initCropperEventsOnce();
+
+      // Auto-start kamera belakang secara otomatis saat modal dibuka pada konteks aman (HTTPS / localhost)
+      if (window.isSecureContext && window.location.protocol !== 'file:' && window.location.protocol !== 'content:') {
+        setTimeout(() => {
+          if (activeSnUid && !isHtml5QrScanning && !isStartingCamera) {
+            startHtml5QrcodeLive();
+          }
+        }, 120);
+      } else {
+        document.getElementById('lensNote').innerHTML = diagnoseAndroidCameraError({ name: 'SecurityError', message: 'Non-secure protocol' });
+      }
     }
 
     async function closeSnModal() {
+      if (autoApplyTimeout) { clearTimeout(autoApplyTimeout); autoApplyTimeout = null; }
+      stopAutoLiveOcrLoop();
       await stopLensCamera();
       hideCropPanel();
       document.getElementById('snModal').style.display = 'none';
@@ -1886,8 +2202,13 @@
     }
 
     function resetLensFeedback() {
+      if (autoApplyTimeout) { clearTimeout(autoApplyTimeout); autoApplyTimeout = null; }
       lastLiveCode = '';
       detectedEntities = [];
+      const vp = document.getElementById('lensViewport');
+      if (vp) vp.classList.remove('detected');
+      const pill = document.getElementById('lensTopPill');
+      if (pill) pill.classList.remove('detected');
       document.getElementById('lensLiveToast').style.display = 'none';
       document.getElementById('lensResultsPanel').style.display = 'none';
       document.getElementById('lensEntityList').innerHTML = '';
@@ -1897,7 +2218,7 @@
       document.getElementById('croppedStripWrap').style.display = 'none';
     }
 
-    function setLensMode(mode) {
+    function setLensMode(mode, shouldRestart = true) {
       lensMode = mode || 'auto';
       document.getElementById('lensTabAuto').classList.toggle('active', lensMode === 'auto');
       document.getElementById('lensTabSlit').classList.toggle('active', lensMode === 'slit');
@@ -1905,9 +2226,10 @@
 
       const pill = document.getElementById('lensTopPill');
       if (pill) {
-        if (lensMode === 'slit') pill.textContent = 'Celah Sempit: Sejajarkan 1 Baris Barcode / SN';
-        else if (lensMode === 'qr') pill.textContent = 'Kotak QR: Posisikan QR Code di Tengah';
-        else pill.textContent = 'Auto Lens: QR, Barcode Batang & Teks';
+        pill.classList.remove('detected');
+        if (lensMode === 'slit') pill.textContent = 'Celah Sempit: Arahkan ke 1 Baris Barcode / SN';
+        else if (lensMode === 'qr') pill.textContent = 'Kotak QR: Arahkan ke QR Code';
+        else pill.textContent = 'Auto Scan: Mencari QR, Barcode & Teks...';
       }
 
       if (document.getElementById('sharedCropPanel').style.display === 'block') {
@@ -1915,13 +2237,24 @@
         applyCropPreset(preset);
       }
 
-      // Jika kamera Html5Qrcode sedang aktif, restart cepat agar qrbox ROI menyesuaikan mode baru
-      if (isHtml5QrScanning) {
+      if (shouldRestart && isHtml5QrScanning && !isStartingCamera) {
         stopLensCamera().then(() => startHtml5QrcodeLive());
       }
     }
 
-    // ---------- MULTI-CAMERA ENUMERATION VIA Html5Qrcode.getCameras() ----------
+    // ---------- SMART MULTI-CAMERA SELECTION (PRIORITIZE MAIN REAR CAMERA ON ANDROID) ----------
+    function scoreRearCamera(cam) {
+      const label = String(cam.label || '').toLowerCase();
+      let score = 0;
+      if (/back|rear|environment|belakang/.test(label)) score += 100;
+      if (/front|user|depan|selfie/.test(label)) score -= 200;
+      // Pada Android Camera2 HAL, 'camera2 0, facing back' hampir selalu lensa belakang utama (main wide AF)
+      if (/camera2\s*0\b/.test(label) || /\b0,\s*facing\s*back/.test(label)) score += 50;
+      // Hindari lensa sekunder yang sering gagal/buram (macro 2MP, depth, ultrawide, tele, infrared)
+      if (/macro|depth|bokeh|ir|infrared|mono|aux|tele|wide\s*angle|ultra/.test(label)) score -= 60;
+      return score;
+    }
+
     async function populateCameraList() {
       if (typeof Html5Qrcode === 'undefined' || !Html5Qrcode.getCameras) return [];
       try {
@@ -1932,15 +2265,22 @@
 
         if (availableCameras.length > 0) {
           sel.innerHTML = availableCameras.map((cam, idx) => {
-            const label = cam.label || `Kamera #${idx + 1}`;
-            return `<option value="${escapeHtml(cam.id)}">${escapeHtml(label)}</option>`;
+            const rawLbl = cam.label || `Kamera #${idx + 1}`;
+            const friendly = /back|rear|environment/i.test(rawLbl)
+              ? `Belakang (${rawLbl})`
+              : (/front|user/i.test(rawLbl) ? `Depan (${rawLbl})` : rawLbl);
+            return `<option value="${escapeHtml(cam.id)}">${escapeHtml(friendly)}</option>`;
           }).join('');
 
-          // Pilih kamera belakang (back / rear / environment / 0) secara default jika belum dipilih
-          if (!selectedCameraId || !availableCameras.some(c => c.id === selectedCameraId)) {
-            const backCam = availableCameras.find(c => /back|rear|environment|belakang/i.test(c.label || ''))
-              || availableCameras[availableCameras.length - 1];
-            selectedCameraId = backCam.id;
+          // Sinkronkan dropdown dengan track yang sedang aktif saat ini
+          const videoEl = document.querySelector('#html5QrReader video');
+          const runningTrack = videoEl && videoEl.srcObject ? videoEl.srcObject.getVideoTracks()[0] : null;
+          const activeDeviceId = runningTrack && runningTrack.getSettings ? runningTrack.getSettings().deviceId : '';
+          if (activeDeviceId && availableCameras.some(c => c.id === activeDeviceId)) {
+            selectedCameraId = activeDeviceId;
+          } else if (!selectedCameraId || !availableCameras.some(c => c.id === selectedCameraId)) {
+            const sorted = [...availableCameras].sort((a, b) => scoreRearCamera(b) - scoreRearCamera(a));
+            selectedCameraId = sorted[0].id;
           }
           sel.value = selectedCameraId;
           bar.style.display = availableCameras.length > 1 ? 'flex' : 'none';
@@ -1954,6 +2294,7 @@
     async function onSwitchCameraDevice() {
       const sel = document.getElementById('lensCameraSelect');
       selectedCameraId = sel.value;
+      userPickedCamera = true;
       if (isHtml5QrScanning) {
         await stopLensCamera();
         await startHtml5QrcodeLive();
@@ -1965,6 +2306,7 @@
       const idx = availableCameras.findIndex(c => c.id === selectedCameraId);
       const nextIdx = (idx + 1) % availableCameras.length;
       selectedCameraId = availableCameras[nextIdx].id;
+      userPickedCamera = true;
       document.getElementById('lensCameraSelect').value = selectedCameraId;
       if (isHtml5QrScanning) {
         await stopLensCamera();
@@ -1972,7 +2314,7 @@
       }
     }
 
-    // ---------- LIVE SCANNER ENGINE VIA Html5Qrcode ----------
+    // ---------- LIVE SCANNER ENGINE VIA Html5Qrcode (4-STAGE REAR CAMERA FALLBACK) ----------
     async function toggleLensCamera() {
       if (isHtml5QrScanning) {
         await stopLensCamera();
@@ -1981,112 +2323,252 @@
       await startHtml5QrcodeLive();
     }
 
+    function buildQrboxFn() {
+      return (viewW, viewH) => {
+        if (lensMode === 'slit') {
+          return {
+            width: Math.max(190, Math.floor(viewW * 0.90)),
+            height: Math.max(58, Math.floor(viewH * 0.25))
+          };
+        }
+        if (lensMode === 'qr') {
+          const side = Math.max(140, Math.floor(Math.min(viewW, viewH) * 0.62));
+          return { width: side, height: side };
+        }
+        return {
+          width: Math.max(190, Math.floor(viewW * 0.86)),
+          height: Math.max(115, Math.floor(viewH * 0.52))
+        };
+      };
+    }
+
+    function onHtml5QrDecoded(decodedText, decodedResult) {
+      const clean = String(decodedText || '').trim();
+      if (!clean || clean === lastLiveCode) return;
+
+      lastLiveCode = clean;
+      const fmtName = (decodedResult && decodedResult.result && decodedResult.result.format && decodedResult.result.format.formatName)
+        ? decodedResult.result.format.formatName
+        : 'QR / BARCODE';
+
+      playLensFeedback();
+
+      const vp = document.getElementById('lensViewport');
+      const pill = document.getElementById('lensTopPill');
+      if (vp) vp.classList.add('detected');
+      if (pill) {
+        pill.classList.add('detected');
+        pill.textContent = `Terdeteksi (${fmtName}): ${clean.substring(0, 26)}`;
+      }
+
+      document.getElementById('lensLiveFormat').textContent = fmtName.toUpperCase() + ' TERDETEKSI';
+      document.getElementById('lensLiveValue').textContent = clean;
+      document.getElementById('lensLiveToast').style.display = 'flex';
+      document.getElementById('snResultInput').value = extractPrimarySnFromCode(clean);
+      buildAndRenderSmartEntities([{ format: fmtName, value: clean }], '');
+
+      // Jika Auto-Pakai aktif, langsung terapkan otomatis ke kartu unit & tutup scanner
+      const autoApply = document.getElementById('chkAutoApplyCode')?.checked;
+      if (autoApply) {
+        if (html5QrLive && isHtml5QrScanning && !isHtml5QrPaused) {
+          try { html5QrLive.pause(true); isHtml5QrPaused = true; } catch (e) {}
+        }
+        if (autoApplyTimeout) clearTimeout(autoApplyTimeout);
+        autoApplyTimeout = setTimeout(() => {
+          applyAllDetectedEntities();
+        }, 650);
+      }
+    }
+
     async function startHtml5QrcodeLive() {
+      if (isStartingCamera) return;
+      isStartingCamera = true;
       hideCropPanel();
       resetLensFeedback();
+
       const btn = document.getElementById('btnStartLensCam');
       const note = document.getElementById('lensNote');
 
       if (typeof Html5Qrcode === 'undefined') {
+        isStartingCamera = false;
         note.innerHTML = `<strong style="color:var(--danger);">Library Html5Qrcode belum termuat.</strong> Periksa koneksi internet Anda lalu muat ulang halaman.`;
         return;
       }
 
       if (!window.isSecureContext || window.location.protocol === 'file:' || window.location.protocol === 'content:') {
+        isStartingCamera = false;
         note.innerHTML = diagnoseAndroidCameraError({ name: 'SecurityError', message: 'Non-secure protocol' });
         return;
       }
 
       try {
         btn.disabled = true;
-        btn.textContent = 'Menyiapkan Html5Qrcode...';
+        btn.textContent = 'Membuka Kamera Belakang...';
 
-        // 1. Deteksi daftar kamera fisik perangkat
-        await populateCameraList();
-
-        // 2. Inisialisasi instance Html5Qrcode dengan dukungan semua format 1D/2D + Native BarcodeDetector hybrid
-        if (!html5QrLive) {
-          html5QrLive = new Html5Qrcode('html5QrReader', {
-            formatsToSupport: getSupportedBarcodeFormats(),
-            experimentalFeatures: {
-              useBarCodeDetectorIfSupported: true
-            },
-            verbose: false
-          });
+        // Pastikan instance lama benar-benar bersih agar Android Camera HAL tidak terkunci (NotReadableError)
+        if (html5QrLive) {
+          try { await html5QrLive.stop(); } catch (e) {}
+          try { html5QrLive.clear(); } catch (e) {}
+          html5QrLive = null;
+          await new Promise(r => setTimeout(r, 160));
         }
 
-        // 3. Hitung ROI qrbox dinamis sesuai mode (Auto / Celah Sempit / Kotak QR)
-        const qrboxFn = (viewW, viewH) => {
-          if (lensMode === 'slit') {
-            return {
-              width: Math.max(190, Math.floor(viewW * 0.90)),
-              height: Math.max(56, Math.floor(viewH * 0.24))
-            };
-          }
-          if (lensMode === 'qr') {
-            const side = Math.max(140, Math.floor(Math.min(viewW, viewH) * 0.62));
-            return { width: side, height: side };
-          }
-          // Auto Lens: kotak lebar untuk QR + barcode batang sekaligus
-          return {
-            width: Math.max(190, Math.floor(viewW * 0.86)),
-            height: Math.max(110, Math.floor(viewH * 0.52))
-          };
-        };
+        const readerEl = document.getElementById('html5QrReader');
+        readerEl.innerHTML = '';
 
-        const cameraArg = selectedCameraId ? { deviceId: { exact: selectedCameraId } } : { facingMode: 'environment' };
-        const config = {
-          fps: 15,
-          qrbox: qrboxFn,
-          aspectRatio: 1.45,
-          disableFlip: false,
-          videoConstraints: {
-            ...(selectedCameraId ? { deviceId: { exact: selectedCameraId } } : { facingMode: { ideal: 'environment' } }),
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
-          }
-        };
+        html5QrLive = new Html5Qrcode('html5QrReader', {
+          formatsToSupport: getSupportedBarcodeFormats(),
+          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+          verbose: false
+        });
 
-        document.getElementById('lensViewport').style.display = 'block';
+        const vp = document.getElementById('lensViewport');
+        vp.style.display = 'block';
+        vp.classList.add('scanning');
         document.getElementById('btnLensResume').style.display = 'none';
         document.getElementById('btnLensCapture').style.display = 'inline-flex';
+        document.getElementById('lensTopPill').textContent = 'Menghubungkan kamera belakang...';
 
-        await html5QrLive.start(
-          cameraArg,
-          config,
-          (decodedText, decodedResult) => {
-            const clean = String(decodedText || '').trim();
-            if (!clean) return;
-            const fmtName = (decodedResult && decodedResult.result && decodedResult.result.format && decodedResult.result.format.formatName)
-              ? decodedResult.result.format.formatName
-              : 'QR / BARCODE';
+        const baseConfig = {
+          fps: 15,
+          qrbox: buildQrboxFn(),
+          disableFlip: false
+        };
 
-            if (clean !== lastLiveCode) {
-              lastLiveCode = clean;
-              playLensFeedback();
-              document.getElementById('lensLiveFormat').textContent = fmtName.toUpperCase() + ' TERDETEKSI';
-              document.getElementById('lensLiveValue').textContent = clean;
-              document.getElementById('lensLiveToast').style.display = 'flex';
-              document.getElementById('snResultInput').value = extractPrimarySnFromCode(clean);
-              buildAndRenderSmartEntities([{ format: fmtName, value: clean }], '');
+        // Susun strategi pembukaan kamera belakang berlapis (resilient terhadap multi-lensa Android)
+        const attempts = [];
+        if (userPickedCamera && selectedCameraId) {
+          attempts.push({ arg: selectedCameraId, cfg: baseConfig });
+        }
+        // Prioritas 1: Logical Main Rear Camera Android (menghindari lensa macro/depth yg error)
+        attempts.push({ arg: { facingMode: { exact: 'environment' } }, cfg: baseConfig });
+        // Prioritas 2: Soft Rear Camera constraint
+        attempts.push({ arg: { facingMode: 'environment' }, cfg: baseConfig });
+
+        let started = false;
+        let lastErr = null;
+
+        for (const step of attempts) {
+          try {
+            await html5QrLive.start(step.arg, step.cfg, onHtml5QrDecoded, () => {});
+            started = true;
+            break;
+          } catch (err) {
+            lastErr = err;
+            if (err && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError' || err.name === 'SecurityError')) {
+              throw err;
             }
-          },
-          () => {}
-        );
+            try { html5QrLive.clear(); } catch (e) {}
+            await new Promise(r => setTimeout(r, 120));
+          }
+        }
+
+        // Prioritas 3 & 4: Enumerasi deviceId kamera belakang terbaik via Html5Qrcode.getCameras()
+        if (!started) {
+          const cams = await populateCameraList();
+          const ordered = [...cams].sort((a, b) => scoreRearCamera(b) - scoreRearCamera(a));
+          for (const cam of ordered) {
+            try {
+              await html5QrLive.start(cam.id, baseConfig, onHtml5QrDecoded, () => {});
+              selectedCameraId = cam.id;
+              started = true;
+              break;
+            } catch (err) {
+              lastErr = err;
+              try { html5QrLive.clear(); } catch (e) {}
+              await new Promise(r => setTimeout(r, 120));
+            }
+          }
+        }
+
+        if (!started) {
+          throw lastErr || new Error('Tidak dapat membuka kamera perangkat.');
+        }
 
         isHtml5QrScanning = true;
         isHtml5QrPaused = false;
         btn.disabled = false;
         btn.textContent = 'Hentikan Kamera';
-        note.innerHTML = '<strong>Html5Qrcode Aktif:</strong> QR &amp; Barcode terbaca otomatis. Untuk membaca <strong>tulisan teks SN/Merk/Model</strong>, klik <strong>"Bidik &amp; Baca Teks"</strong>.';
+        setLensMode(lensMode, false);
+        note.innerHTML = '<strong>Kamera Belakang Aktif:</strong> Arahkan ke QR atau Barcode untuk deteksi otomatis. Untuk stiker teks tanpa barcode, aktifkan <strong>Auto Baca Teks</strong> atau tekan <strong>Bidik Teks</strong>.';
 
-        // Refresh label kamera setelah izin diberikan & pasang kontrol hardware (Zoom, Torch, Autofocus)
+        // Setelah stream berjalan, muat daftar lensa (dengan label asli) & aktifkan kontrol Zoom/Senter/Fokus
         await populateCameraList();
         setupHtml5QrTrackCapabilities();
+
+        if (document.getElementById('chkAutoLiveOcr')?.checked) {
+          startAutoLiveOcrLoop();
+        }
       } catch (err) {
         await stopLensCamera();
         note.innerHTML = diagnoseAndroidCameraError(err);
+      } finally {
+        isStartingCamera = false;
       }
+    }
+
+    function onToggleAutoLiveOcr() {
+      const enabled = document.getElementById('chkAutoLiveOcr')?.checked;
+      if (enabled && isHtml5QrScanning && !isHtml5QrPaused) {
+        startAutoLiveOcrLoop();
+      } else {
+        stopAutoLiveOcrLoop();
+      }
+    }
+
+    function startAutoLiveOcrLoop() {
+      stopAutoLiveOcrLoop();
+      autoOcrInterval = setInterval(async () => {
+        if (!isHtml5QrScanning || isHtml5QrPaused || autoOcrBusy || lastLiveCode) return;
+        const video = document.querySelector('#html5QrReader video');
+        if (!video || !video.videoWidth || typeof Tesseract === 'undefined') return;
+
+        autoOcrBusy = true;
+        try {
+          const pill = document.getElementById('lensTopPill');
+          if (pill && !pill.classList.contains('detected')) {
+            pill.textContent = 'Auto OCR: Membaca teks di dalam kotak...';
+          }
+          const rawCanvas = grabRoiCanvasFromVideo(video);
+          const { binCanvas } = buildDenoisedOcrVariants(rawCanvas);
+          const worker = await Tesseract.createWorker('eng', 1);
+          await worker.setParameters({ tessedit_pageseg_mode: '6' });
+          const res = await worker.recognize(binCanvas.toDataURL('image/png'));
+          await worker.terminate();
+          const txt = (res && res.data && res.data.text) ? res.data.text.trim() : '';
+          if (txt && isHtml5QrScanning && !lastLiveCode) {
+            buildAndRenderSmartEntities([], txt);
+            const bestSn = detectedEntities.find(e => e.type === 'sn' || e.type === 'qr');
+            if (bestSn) {
+              lastLiveCode = bestSn.value;
+              playLensFeedback();
+              const vp = document.getElementById('lensViewport');
+              if (vp) vp.classList.add('detected');
+              if (pill) {
+                pill.classList.add('detected');
+                pill.textContent = `Teks SN Terdeteksi: ${bestSn.value}`;
+              }
+              document.getElementById('lensLiveFormat').textContent = 'AUTO OCR SN TERDETEKSI';
+              document.getElementById('lensLiveValue').textContent = bestSn.value;
+              document.getElementById('lensLiveToast').style.display = 'flex';
+              document.getElementById('snResultInput').value = bestSn.value;
+              if (document.getElementById('chkAutoApplyCode')?.checked) {
+                if (autoApplyTimeout) clearTimeout(autoApplyTimeout);
+                autoApplyTimeout = setTimeout(() => applyAllDetectedEntities(), 750);
+              }
+            }
+          }
+        } catch (e) {}
+        autoOcrBusy = false;
+      }, 2600);
+    }
+
+    function stopAutoLiveOcrLoop() {
+      if (autoOcrInterval) {
+        clearInterval(autoOcrInterval);
+        autoOcrInterval = null;
+      }
+      autoOcrBusy = false;
     }
 
     function setupHtml5QrTrackCapabilities() {
@@ -2108,13 +2590,12 @@
         const caps = html5QrLive.getRunningTrackCameraCapabilities();
         activeTrackCaps = caps;
 
-        // 1. Zoom Hardware via Html5Qrcode ZoomFeature
         if (caps && caps.zoomFeature && caps.zoomFeature().isSupported()) {
           const zf = caps.zoomFeature();
           const minZ = zf.min() || 1;
           const maxZ = Math.min(zf.max() || 4, 5);
           const stepZ = zf.step() || 0.1;
-          const defaultZ = Math.min(1.5, maxZ);
+          const defaultZ = Math.min(1.4, maxZ);
 
           slider.min = minZ;
           slider.max = maxZ;
@@ -2130,12 +2611,10 @@
           ctrl.style.display = 'flex';
         }
 
-        // 2. Torch / Senter Hardware via Html5Qrcode TorchFeature
         if (caps && caps.torchFeature && caps.torchFeature().isSupported()) {
           torchBtn.style.display = 'inline-block';
         }
 
-        // 3. Continuous Autofocus via applyVideoConstraints
         const videoEl = document.querySelector('#html5QrReader video');
         const track = videoEl && videoEl.srcObject ? videoEl.srcObject.getVideoTracks()[0] : null;
         if (track && track.getCapabilities) {
@@ -2145,9 +2624,7 @@
             focusBtn.style.display = 'inline-block';
           }
         }
-      } catch (e) {
-        console.warn('Track capabilities notice:', e);
-      }
+      } catch (e) {}
     }
 
     async function applyLensZoom(val) {
@@ -2187,30 +2664,43 @@
             }
           }, 600);
           document.getElementById('lensTopPill').textContent = 'Memfokuskan ulang kamera...';
-          setTimeout(() => setLensMode(lensMode), 900);
+          setTimeout(() => setLensMode(lensMode, false), 900);
         }
       } catch (e) {}
     }
 
     async function stopLensCamera() {
-      if (html5QrLive && isHtml5QrScanning) {
-        try {
-          await html5QrLive.stop();
-        } catch (e) {}
+      stopAutoLiveOcrLoop();
+      if (html5QrLive) {
+        if (isHtml5QrScanning) {
+          try { await html5QrLive.stop(); } catch (e) {}
+        }
+        try { html5QrLive.clear(); } catch (e) {}
+        html5QrLive = null;
       }
+      // Pastikan seluruh track media benar-benar berhenti agar sensor kamera belakang langsung bebas
+      const leftoverVideo = document.querySelector('#html5QrReader video');
+      if (leftoverVideo && leftoverVideo.srcObject) {
+        try { leftoverVideo.srcObject.getTracks().forEach(t => t.stop()); } catch (e) {}
+        leftoverVideo.srcObject = null;
+      }
+
       isHtml5QrScanning = false;
       isHtml5QrPaused = false;
       lensTorchOn = false;
       activeTrackCaps = null;
 
       const vp = document.getElementById('lensViewport');
-      if (vp) vp.style.display = 'none';
+      if (vp) {
+        vp.style.display = 'none';
+        vp.classList.remove('scanning', 'detected');
+      }
       const ctrl = document.getElementById('lensZoomControls');
       if (ctrl) ctrl.style.display = 'none';
       const btn = document.getElementById('btnStartLensCam');
       if (btn) {
         btn.disabled = false;
-        btn.textContent = 'Buka Kamera Lens';
+        btn.textContent = 'Buka Kamera Belakang';
       }
     }
 
@@ -2221,12 +2711,7 @@
       }
     }
 
-    // Freeze frame langsung dari video Html5Qrcode menggunakan html5QrLive.pause(true) lalu baca ROI + OCR!
-    async function captureAndAnalyzeLens() {
-      const video = document.querySelector('#html5QrReader video');
-      if (!video || !video.videoWidth) return;
-
-      // Hitung ROI sesuai mode aktif pada video Html5Qrcode
+    function grabRoiCanvasFromVideo(video) {
       const natW = video.videoWidth;
       const natH = video.videoHeight;
       let sw = natW;
@@ -2249,14 +2734,21 @@
       rawCanvas.width = sw;
       rawCanvas.height = sh;
       rawCanvas.getContext('2d').drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+      return rawCanvas;
+    }
 
-      // Pause/bekukan video live agar pengguna melihat frame yang dibidik & bisa resume kapan saja
+    async function captureAndAnalyzeLens() {
+      const video = document.querySelector('#html5QrReader video');
+      if (!video || !video.videoWidth) return;
+
+      const rawCanvas = grabRoiCanvasFromVideo(video);
+
       if (html5QrLive && isHtml5QrScanning && !isHtml5QrPaused) {
         try {
           html5QrLive.pause(true);
           isHtml5QrPaused = true;
           document.getElementById('btnLensResume').style.display = 'inline-block';
-          document.getElementById('lensTopPill').textContent = 'Frame Dibekukan — Memproses Teks & Kode...';
+          document.getElementById('lensTopPill').textContent = 'Frame Dibekukan — Membaca Teks & Kode...';
         } catch (e) {}
       }
 
@@ -2268,8 +2760,11 @@
         try {
           html5QrLive.resume();
           isHtml5QrPaused = false;
+          lastLiveCode = '';
+          const vp = document.getElementById('lensViewport');
+          if (vp) vp.classList.remove('detected');
           document.getElementById('btnLensResume').style.display = 'none';
-          setLensMode(lensMode);
+          setLensMode(lensMode, false);
         } catch (e) {}
       }
     }
@@ -3000,12 +3495,26 @@
     }
 
     // ======================================================
-    // TAMBAH KARYAWAN BARU
+    // TAMBAH KARYAWAN BARU (DENGAN VALIDASI & NOTIFIKASI INLINE)
     // ======================================================
+    function showEmpModalAlert(msg, type) {
+      const box = document.getElementById('empModalAlert');
+      if (!box) return;
+      if (!msg) {
+        box.style.display = 'none';
+        box.textContent = '';
+        return;
+      }
+      box.className = 'modal-inline-alert ' + (type === 'ok' ? 'ok' : 'err');
+      box.textContent = msg;
+      box.style.display = 'block';
+    }
+
     function openEmpModal() {
+      showEmpModalAlert('');
       document.getElementById('newEmpPT').value = document.getElementById('selPT').value;
       onSelectNewEmpPT(document.getElementById('selLokasi').value);
-      document.getElementById('newEmpDivisi').value = document.getElementById('selDivisi').value;
+      setDivisiValue('modal', getDivisiValue('main') || (MASTER.divisions[0] || ''));
       document.getElementById('empModal').style.display = 'flex';
     }
 
@@ -3015,25 +3524,43 @@
       openEmpModal();
     }
 
-    function closeEmpModal() { document.getElementById('empModal').style.display = 'none'; }
+    function closeEmpModal() {
+      showEmpModalAlert('');
+      document.getElementById('empModal').style.display = 'none';
+    }
 
     async function saveNewEmployee() {
+      showEmpModalAlert('');
       const nama = document.getElementById('newEmpNama').value.trim();
-      if (!nama) { alert('Nama karyawan wajib diisi.'); return; }
+      const divisiVal = getDivisiValue('modal').trim();
+
+      if (!nama) {
+        showEmpModalAlert('Nama lengkap karyawan wajib diisi.', 'err');
+        return;
+      }
+      if (!divisiVal) {
+        showEmpModalAlert('Divisi wajib diisi (pilih dari daftar atau ketik divisi baru).', 'err');
+        return;
+      }
 
       const empData = {
         id: document.getElementById('newEmpId').value.trim(),
         nama: nama,
         pt: document.getElementById('newEmpPT').value,
         lokasi: document.getElementById('newEmpLokasi').value,
-        divisi: document.getElementById('newEmpDivisi').value,
+        divisi: divisiVal,
         status: 'Aktif'
       };
 
       const btn = document.getElementById('btnSaveEmp');
-      btn.disabled = true; btn.textContent = 'Menyimpan...';
+      btn.disabled = true; btn.textContent = 'Menyimpan ke Master_Karyawan...';
 
-      const onDone = (newEmp) => {
+      const onDone = (newEmp, allDivs) => {
+        if (Array.isArray(allDivs) && allDivs.length > 0) {
+          MASTER.divisions = uniqueList(allDivs);
+        } else if (divisiVal && !MASTER.divisions.some(d => d.toLowerCase() === divisiVal.toLowerCase())) {
+          MASTER.divisions.push(divisiVal);
+        }
         MASTER.employees.push(newEmp);
         localStorage.setItem(STORAGE_KEY_MASTER, JSON.stringify(MASTER));
         document.getElementById('empCountBadge').textContent = MASTER.employees.length + ' Data';
@@ -3042,12 +3569,14 @@
         document.getElementById('newEmpNama').value = '';
         closeEmpModal();
         btn.disabled = false; btn.textContent = 'Simpan & Pilih Karyawan';
+        const rowInfo = newEmp.row ? ` (baris #${newEmp.row})` : '';
+        showSuccess(`<strong>Karyawan baru berhasil disimpan ke Master_Karyawan${rowInfo}!</strong><br>${escapeHtml(newEmp.nama)} (${escapeHtml(newEmp.id)}) &mdash; ${escapeHtml(newEmp.divisi)} / ${escapeHtml(newEmp.lokasi)}`);
       };
 
       if (IS_APPS_SCRIPT_HOST) {
-        google.script.run.withSuccessHandler(onDone).withFailureHandler(err => {
+        google.script.run.withSuccessHandler(res => onDone(res, null)).withFailureHandler(err => {
           btn.disabled = false; btn.textContent = 'Simpan & Pilih Karyawan';
-          showError(err.message || err);
+          showEmpModalAlert('Gagal menyimpan ke Master_Karyawan: ' + (err.message || err), 'err');
         }).addNewEmployee(empData);
         return;
       }
@@ -3056,22 +3585,27 @@
       const pin = getApiPin();
       if (!url || !pin) {
         btn.disabled = false; btn.textContent = 'Simpan & Pilih Karyawan';
-        document.getElementById('apiConfigBox').style.display = 'block';
-        alert('Isi dulu URL Web App dan PIN Rahasia Tim IT di kotak biru bagian atas.');
+        showEmpModalAlert('URL Web App dan PIN Rahasia Tim IT belum diisi. Tutup modal ini lalu lengkapi di kotak biru bagian atas.', 'err');
         return;
       }
 
       try {
         const res = await fetch(url, {
           method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          redirect: 'follow',
           body: JSON.stringify({ action: 'addNewEmployee', key: pin, data: empData })
         });
-        const json = await res.json();
+        const text = await res.text();
+        let json;
+        try { json = JSON.parse(text); } catch (e) { throw new Error('Respon server bukan JSON. Pastikan Code.gs sudah di-deploy ulang sebagai New version.'); }
         if (!json.success) throw new Error(json.error || 'Gagal menambah karyawan');
-        onDone(json.employee);
+        const savedEmp = json.employee || {};
+        if (json.row && !savedEmp.row) savedEmp.row = json.row;
+        onDone(savedEmp, json.divisions);
       } catch (err) {
         btn.disabled = false; btn.textContent = 'Simpan & Pilih Karyawan';
-        showError(err.message || err);
+        showEmpModalAlert('Gagal menyimpan ke Master_Karyawan: ' + (err.message || err), 'err');
       }
     }
 
@@ -3091,6 +3625,15 @@
       if (!IS_APPS_SCRIPT_HOST && (!url || !pin)) {
         document.getElementById('apiConfigBox').style.display = 'block';
         alert('Tempelkan dulu URL Web App dan PIN Rahasia Tim IT di kotak biru bagian atas.');
+        return;
+      }
+
+      // Guard: jika user mengetik nama pemegang di kotak pencarian tanpa mengklik item/tombol + Baru
+      const typedEmpName = document.getElementById('searchPemegang').value.trim();
+      if (typedEmpName && !selectedEmpId) {
+        const autoAdd = confirm(`Nama "${typedEmpName}" belum terdaftar / belum dipilih dari daftar.\n\nKlik OK untuk otomatis menyimpannya sebagai Karyawan Baru di Master_Karyawan sebelum menyimpan unit.\nKlik Cancel untuk membatalkan.`);
+        if (!autoAdd) return;
+        openEmpModalWithName(typedEmpName);
         return;
       }
 
@@ -3127,6 +3670,7 @@
 
       const emp = (MASTER.employees || []).find(e => e.id === selectedEmpId);
       const picVal = document.getElementById('txtPIC').value.trim();
+      const divisiVal = getDivisiValue('main') || '-';
       if (picVal) localStorage.setItem(STORAGE_KEY_PIC, picVal);
 
       const payload = {
@@ -3134,7 +3678,7 @@
         namaPemegang: emp ? emp.nama : '',
         pt: document.getElementById('selPT').value,
         lokasi: document.getElementById('selLokasi').value,
-        divisi: document.getElementById('selDivisi').value,
+        divisi: divisiVal,
         pic: picVal,
         units: units
       };
@@ -3142,8 +3686,12 @@
       setSubmitButtonsState(true, `Mengunggah (${totalPhotos} Foto)...`);
 
       const onSaveSuccess = (json) => {
+        if (Array.isArray(json.divisions) && json.divisions.length > 0) {
+          MASTER.divisions = uniqueList(json.divisions);
+          localStorage.setItem(STORAGE_KEY_MASTER, JSON.stringify(MASTER));
+        }
         setSubmitButtonsState(false, 'Simpan Semua Unit');
-        showSuccess(`<strong>Berhasil menyimpan ${json.count} unit (${json.totalPhotos ?? totalPhotos} foto)!</strong><br>Kode Aset: <b>${json.codes.join(', ')}</b><br>Folder Drive: <a href="${json.folderUrl}" target="_blank">${escapeHtml(json.folderPath)}</a>`);
+        showSuccess(`<strong>Berhasil menyimpan ${json.count} unit (${json.totalPhotos ?? totalPhotos} foto terpisah per kolom)!</strong><br>Kode Aset: <b>${json.codes.join(', ')}</b><br>Folder Drive: <a href="${json.folderUrl}" target="_blank">${escapeHtml(json.folderPath)}</a>`);
         resetUnitCards();
       };
 
@@ -3158,6 +3706,8 @@
       try {
         const res = await fetch(url, {
           method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          redirect: 'follow',
           body: JSON.stringify({ action: 'saveMultiInventory', key: pin, data: payload })
         });
         const json = await res.json();
@@ -3225,6 +3775,8 @@
         try {
           const res = await fetch(url, {
             method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            redirect: 'follow',
             body: JSON.stringify({ action: 'saveMultiInventory', key: pin, data: item })
           });
           const json = await res.json();
