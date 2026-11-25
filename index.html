@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>Inventaris Aset — Sapphire Grup (v4)</title>
+  <title>Inventaris Aset — Sapphire Grup (v5)</title>
   <!-- Library Scanner QR/Barcode (1D & 2D) dan OCR Ekstrak Teks SN -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
@@ -940,6 +940,22 @@
           </div>
 
           <div class="field">
+            <label id="lblJabatanMain">Jabatan / Sub-Divisi (Cari atau Ketik Baru)</label>
+            <div class="combo-wrap" id="jabatanComboWrap">
+              <div class="combo-input-wrap">
+                <input type="text" id="searchJabatan" autocomplete="off"
+                  placeholder="Pilih atau ketik jabatan/sub-divisi..."
+                  onfocus="openJabatanDropdown('main')"
+                  oninput="filterJabatanDropdown('main')"
+                  onkeydown="handleJabatanKeydown(event, 'main')">
+                <button type="button" id="btnClearJabatan" class="combo-clear" title="Bersihkan jabatan" onclick="clearJabatan('main')">&times;</button>
+              </div>
+              <div id="jabatanDropdownList" class="combo-dropdown"></div>
+            </div>
+            <div id="jabatanHint" class="helper-text">Otomatis terfilter sesuai Divisi yang dipilih; ketik jabatan baru jika belum terdaftar.</div>
+          </div>
+
+          <div class="field">
             <label>Nama PIC Input (Petugas IT yang Mendata)</label>
             <input type="text" id="txtPIC" placeholder="Nama Anda / Staf IT pendata" oninput="savePicLocal()">
             <div class="helper-text">Diisi nama petugas IT yang sedang melakukan pendataan (otomatis diingat di perangkat ini).</div>
@@ -1006,6 +1022,20 @@
             <button type="button" id="btnClearNewEmpDivisi" class="combo-clear" title="Bersihkan divisi" onclick="clearDivisi('modal')">&times;</button>
           </div>
           <div id="newEmpDivisiDropdownList" class="combo-dropdown"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label id="lblJabatanModal">Jabatan / Sub-Divisi (Cari atau Ketik Baru)</label>
+        <div class="combo-wrap" id="newEmpJabatanComboWrap">
+          <div class="combo-input-wrap">
+            <input type="text" id="searchNewEmpJabatan" autocomplete="off"
+              placeholder="Pilih atau ketik jabatan/sub-divisi..."
+              onfocus="openJabatanDropdown('modal')"
+              oninput="filterJabatanDropdown('modal')"
+              onkeydown="handleJabatanKeydown(event, 'modal')">
+            <button type="button" id="btnClearNewEmpJabatan" class="combo-clear" title="Bersihkan jabatan" onclick="clearJabatan('modal')">&times;</button>
+          </div>
+          <div id="newEmpJabatanDropdownList" class="combo-dropdown"></div>
         </div>
       </div>
       <button type="button" id="btnSaveEmp" class="btn btn-primary" onclick="saveNewEmployee()">Simpan &amp; Pilih Karyawan</button>
@@ -1204,6 +1234,13 @@
         'Finance & Accounting', 'HRD & GA', 'Teknik & Proyek',
         'Legal & Perizinan', 'Operasional / Estate'
       ],
+      positions: [
+        { divisi: 'IT', jabatan: 'Manajer IT' },
+        { divisi: 'IT', jabatan: 'SPV IT' },
+        { divisi: 'IT', jabatan: 'Programmer' },
+        { divisi: 'IT', jabatan: 'IT Support' },
+        { divisi: 'IT', jabatan: 'Data Analyst' }
+      ],
       conditions: ['Baik', 'Rusak Ringan', 'Rusak Berat', 'Hilang'],
       statuses: ['Dipakai Karyawan', 'Aset Bersama / Ruangan', 'Stok Gudang IT', 'Sedang Servis', 'Afkir / Disposed'],
       employees: [
@@ -1225,6 +1262,8 @@
     let selectedEmpId = '';
     let selectedDivisiMain = '';
     let selectedDivisiModal = '';
+    let selectedJabatanMain = '';
+    let selectedJabatanModal = '';
     let unitSeq = 0;
     let UNIT_PHOTOS = {};
 
@@ -1289,6 +1328,14 @@
         const modalDivWrap = document.getElementById('newEmpDivisiComboWrap');
         if (modalDivWrap && !modalDivWrap.contains(e.target)) {
           document.getElementById('newEmpDivisiDropdownList').style.display = 'none';
+        }
+        const jabWrap = document.getElementById('jabatanComboWrap');
+        if (jabWrap && !jabWrap.contains(e.target)) {
+          document.getElementById('jabatanDropdownList').style.display = 'none';
+        }
+        const modalJabWrap = document.getElementById('newEmpJabatanComboWrap');
+        if (modalJabWrap && !modalJabWrap.contains(e.target)) {
+          document.getElementById('newEmpJabatanDropdownList').style.display = 'none';
         }
       });
     };
@@ -1455,9 +1502,27 @@
       return Array.from(new Set(arr.map(s => String(s || '').trim()).filter(Boolean)));
     }
 
+    function normalizePositions(list) {
+      const seen = new Set();
+      const out = [];
+      (list || []).forEach(item => {
+        if (!item) return;
+        const d = String(item.divisi || '').trim();
+        const j = String(item.jabatan || '').trim();
+        if (!d || !j || j === '-') return;
+        const key = d.toLowerCase() + '||' + j.toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          out.push({ divisi: d, jabatan: j });
+        }
+      });
+      return out;
+    }
+
     function initForm(data, keepUnits) {
       const uniquePts = uniqueList((data.pts || []).map(x => x.nama));
       MASTER.divisions = uniqueList(data.divisions || []);
+      MASTER.positions = normalizePositions(data.positions || DEFAULT_MASTER.positions || []);
       fillSelect('selPT', uniquePts);
       fillSelect('newEmpPT', uniquePts);
 
@@ -1468,6 +1533,9 @@
       if (!selectedDivisiModal && MASTER.divisions.length > 0) {
         setDivisiValue('modal', selectedDivisiMain || MASTER.divisions[0]);
       }
+
+      onDivisiChanged('main', selectedJabatanMain);
+      onDivisiChanged('modal', selectedJabatanModal);
 
       onSelectPT();
       onSelectNewEmpPT();
@@ -1517,6 +1585,7 @@
 
     function clearDivisi(scope) {
       setDivisiValue(scope, '');
+      onDivisiChanged(scope, '');
       const els = getDivisiElements(scope);
       if (els.input) els.input.focus();
       filterDivisiDropdown(scope);
@@ -1576,6 +1645,7 @@
       setDivisiValue(scope, name);
       const els = getDivisiElements(scope);
       if (els.list) els.list.style.display = 'none';
+      onDivisiChanged(scope);
     }
 
     function handleDivisiKeydown(event, scope) {
@@ -1605,6 +1675,7 @@
         localStorage.setItem(STORAGE_KEY_MASTER, JSON.stringify(MASTER));
       }
       setDivisiValue(scope, cleanName);
+      onDivisiChanged(scope, '');
 
       const hintEl = document.getElementById('divisiHint');
       if (scope === 'main' && hintEl) {
@@ -1666,6 +1737,286 @@
         if (scope === 'main' && hintEl) {
           hintEl.textContent = `Divisi "${cleanName}" siap dipakai & akan otomatis didaftarkan ke Master_Referensi saat simpan.`;
           hintEl.style.color = '#b45309';
+        }
+      }
+    }
+
+    // ======================================================
+    // FILTER BERJENJANG DIVISI -> JABATAN / SUB-DIVISI + AUTO-TAMBAH
+    // ======================================================
+    function getJabatanElements(scope) {
+      if (scope === 'modal') {
+        return {
+          input: document.getElementById('searchNewEmpJabatan'),
+          clearBtn: document.getElementById('btnClearNewEmpJabatan'),
+          list: document.getElementById('newEmpJabatanDropdownList'),
+          label: document.getElementById('lblJabatanModal'),
+          hint: null
+        };
+      }
+      return {
+        input: document.getElementById('searchJabatan'),
+        clearBtn: document.getElementById('btnClearJabatan'),
+        list: document.getElementById('jabatanDropdownList'),
+        label: document.getElementById('lblJabatanMain'),
+        hint: document.getElementById('jabatanHint')
+      };
+    }
+
+    function getPositionsForDivisi(divisiName) {
+      const target = String(divisiName || '').trim().toLowerCase();
+      if (!target) return [];
+
+      const seen = new Set();
+      const out = [];
+      const addPos = (j) => {
+        const clean = String(j || '').trim();
+        if (clean && clean !== '-' && !seen.has(clean.toLowerCase())) {
+          seen.add(clean.toLowerCase());
+          out.push(clean);
+        }
+      };
+
+      (MASTER.positions || []).forEach(p => {
+        if (String(p.divisi || '').trim().toLowerCase() === target) {
+          addPos(p.jabatan);
+        }
+      });
+
+      // Fallback otomatis dari data jabatan karyawan di divisi yang sama
+      (MASTER.employees || []).forEach(e => {
+        if (String(e.divisi || '').trim().toLowerCase() === target && e.jabatan) {
+          addPos(e.jabatan);
+        }
+      });
+
+      return out;
+    }
+
+    function setJabatanValue(scope, val) {
+      const clean = String(val || '').trim();
+      const els = getJabatanElements(scope);
+      if (scope === 'modal') selectedJabatanModal = clean;
+      else selectedJabatanMain = clean;
+      if (els.input) els.input.value = clean;
+      if (els.clearBtn) els.clearBtn.style.display = clean ? 'flex' : 'none';
+    }
+
+    function getJabatanValue(scope) {
+      const els = getJabatanElements(scope);
+      const typed = els.input ? els.input.value.trim() : '';
+      if (typed) return typed;
+      return scope === 'modal' ? selectedJabatanModal : selectedJabatanMain;
+    }
+
+    function onDivisiChanged(scope, preferredJabatan) {
+      const activeDiv = getDivisiValue(scope);
+      const opts = getPositionsForDivisi(activeDiv);
+      const els = getJabatanElements(scope);
+
+      if (preferredJabatan !== undefined) {
+        setJabatanValue(scope, preferredJabatan);
+      } else {
+        const curr = getJabatanValue(scope);
+        const stillValid = curr && opts.some(o => o.toLowerCase() === curr.toLowerCase());
+        if (!stillValid) {
+          setJabatanValue(scope, '');
+        }
+      }
+
+      if (els.label) {
+        if (!activeDiv) {
+          els.label.textContent = 'Jabatan / Sub-Divisi (Pilih Divisi dulu)';
+        } else if (opts.length > 0) {
+          els.label.textContent = `Jabatan / Sub-Divisi (${opts.length} struktur ${activeDiv})`;
+        } else {
+          els.label.textContent = `Jabatan / Sub-Divisi (${activeDiv} — ketik untuk tambah)`;
+        }
+      }
+      if (els.hint) {
+        if (!activeDiv) {
+          els.hint.textContent = 'Pilih Divisi di atas terlebih dahulu untuk menampilkan struktur jabatannya.';
+          els.hint.style.color = 'var(--muted)';
+        } else if (opts.length > 0) {
+          els.hint.textContent = `Terfilter khusus struktur divisi ${activeDiv}. Ketik jabatan baru jika belum ada di daftar.`;
+          els.hint.style.color = 'var(--ok)';
+        } else {
+          els.hint.textContent = `Belum ada daftar jabatan untuk divisi ${activeDiv} — ketik langsung untuk menambah otomatis ke Master_Referensi.`;
+          els.hint.style.color = '#b45309';
+        }
+      }
+    }
+
+    function clearJabatan(scope) {
+      setJabatanValue(scope, '');
+      const els = getJabatanElements(scope);
+      if (els.input) els.input.focus();
+      filterJabatanDropdown(scope);
+    }
+
+    function openJabatanDropdown(scope) {
+      filterJabatanDropdown(scope);
+      const els = getJabatanElements(scope);
+      if (els.list) els.list.style.display = 'block';
+    }
+
+    function filterJabatanDropdown(scope) {
+      const els = getJabatanElements(scope);
+      if (!els.input || !els.list) return;
+      const activeDiv = getDivisiValue(scope);
+      const rawQuery = els.input.value.trim();
+      const q = rawQuery.toLowerCase();
+      if (els.clearBtn) els.clearBtn.style.display = rawQuery ? 'flex' : 'none';
+
+      if (!activeDiv) {
+        els.list.innerHTML = `<div class="combo-item" style="color:var(--muted); cursor:default;">Pilih atau ketik Divisi terlebih dahulu di kolom atas...</div>`;
+        els.list.style.display = 'block';
+        return;
+      }
+
+      const divPositions = getPositionsForDivisi(activeDiv);
+      const matches = q
+        ? divPositions.filter(j => j.toLowerCase().includes(q))
+        : divPositions;
+
+      const exactExists = rawQuery && divPositions.some(j => j.toLowerCase() === q);
+      const currentSelected = scope === 'modal' ? selectedJabatanModal : selectedJabatanMain;
+
+      let html = '';
+
+      if (rawQuery && !exactExists) {
+        html += `
+          <div class="combo-item combo-item-add" onclick="createAndSelectPosition('${escapeJs(rawQuery)}', '${scope}')">
+            <div class="combo-item-title" style="color:#166534;">
+              <span>+ Tambah Jabatan: "${escapeHtml(rawQuery)}"</span>
+              <span class="combo-tag" style="background:#bbf7d0; color:#166534;">DIVISI ${escapeHtml(activeDiv.toUpperCase())}</span>
+            </div>
+            <div class="combo-item-sub">Belum ada di struktur ${escapeHtml(activeDiv)} &mdash; klik untuk langsung simpan ke Master_Referensi</div>
+          </div>
+        `;
+      }
+
+      if (matches.length > 0) {
+        html += matches.map(j => `
+          <div class="combo-item ${j.toLowerCase() === (currentSelected || '').toLowerCase() ? 'active' : ''}" onclick="selectJabatan('${escapeJs(j)}', '${scope}')">
+            <div class="combo-item-title">
+              <span>${escapeHtml(j)}</span>
+              <span class="combo-tag">${escapeHtml(activeDiv)}</span>
+            </div>
+          </div>
+        `).join('');
+      } else if (!rawQuery) {
+        html += `<div class="combo-item" style="color:var(--muted); cursor:default;">Belum ada jabatan di divisi ${escapeHtml(activeDiv)}. Ketik nama jabatan baru lalu tekan Enter...</div>`;
+      }
+
+      els.list.innerHTML = html;
+      els.list.style.display = 'block';
+    }
+
+    function selectJabatan(name, scope) {
+      setJabatanValue(scope, name);
+      const els = getJabatanElements(scope);
+      if (els.list) els.list.style.display = 'none';
+    }
+
+    function handleJabatanKeydown(event, scope) {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      const els = getJabatanElements(scope);
+      const typed = (els.input?.value || '').trim();
+      if (!typed) return;
+      const activeDiv = getDivisiValue(scope);
+      const existing = getPositionsForDivisi(activeDiv).find(j => j.toLowerCase() === typed.toLowerCase());
+      if (existing) {
+        selectJabatan(existing, scope);
+      } else {
+        createAndSelectPosition(typed, scope);
+      }
+    }
+
+    async function createAndSelectPosition(rawJabatan, scope) {
+      const cleanJabatan = String(rawJabatan || '').trim();
+      const activeDiv = getDivisiValue(scope).trim();
+      if (!cleanJabatan) return;
+      if (!activeDiv) {
+        alert('Pilih atau ketik Divisi terlebih dahulu sebelum menambahkan jabatan.');
+        return;
+      }
+
+      const els = getJabatanElements(scope);
+      if (els.list) els.list.style.display = 'none';
+
+      // Simpan langsung di cache lokal agar responsif
+      MASTER.positions = normalizePositions((MASTER.positions || []).concat([{ divisi: activeDiv, jabatan: cleanJabatan }]));
+      if (!MASTER.divisions.some(d => d.toLowerCase() === activeDiv.toLowerCase())) {
+        MASTER.divisions.push(activeDiv);
+      }
+      localStorage.setItem(STORAGE_KEY_MASTER, JSON.stringify(MASTER));
+      setJabatanValue(scope, cleanJabatan);
+      onDivisiChanged(scope, cleanJabatan);
+
+      if (scope === 'main' && els.hint) {
+        els.hint.textContent = `Menyimpan jabatan "${cleanJabatan}" (${activeDiv}) ke Master_Referensi...`;
+        els.hint.style.color = 'var(--primary)';
+      }
+
+      const onSaved = (finalJab, allPos, allDivs) => {
+        if (Array.isArray(allPos) && allPos.length > 0) {
+          MASTER.positions = normalizePositions(allPos);
+        }
+        if (Array.isArray(allDivs) && allDivs.length > 0) {
+          MASTER.divisions = uniqueList(allDivs);
+        }
+        localStorage.setItem(STORAGE_KEY_MASTER, JSON.stringify(MASTER));
+        onDivisiChanged(scope, finalJab || cleanJabatan);
+        if (scope === 'main' && els.hint) {
+          els.hint.textContent = `Jabatan "${finalJab || cleanJabatan}" (${activeDiv}) tersimpan otomatis ke Master_Referensi.`;
+          els.hint.style.color = 'var(--ok)';
+        } else if (scope === 'modal') {
+          showEmpModalAlert(`Jabatan baru "${finalJab || cleanJabatan}" di divisi ${activeDiv} ditambahkan ke Master_Referensi.`, 'ok');
+        }
+      };
+
+      if (IS_APPS_SCRIPT_HOST) {
+        google.script.run
+          .withSuccessHandler(res => onSaved(res.jabatan || cleanJabatan, res.positions, res.divisions))
+          .withFailureHandler(() => {
+            if (scope === 'main' && els.hint) {
+              els.hint.textContent = `Jabatan "${cleanJabatan}" dipilih lokal (akan ikut tersimpan saat submit).`;
+              els.hint.style.color = '#b45309';
+            }
+          })
+          .addNewPosition(activeDiv, cleanJabatan);
+        return;
+      }
+
+      const url = getApiUrl();
+      const pin = getApiPin();
+      if (!url || !pin) {
+        if (scope === 'main' && els.hint) {
+          els.hint.textContent = `Jabatan "${cleanJabatan}" dipakai lokal (hubungkan URL & PIN untuk sinkronisasi ke Sheets).`;
+          els.hint.style.color = '#b45309';
+        }
+        return;
+      }
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          redirect: 'follow',
+          body: JSON.stringify({ action: 'addNewPosition', key: pin, data: { divisi: activeDiv, jabatan: cleanJabatan } })
+        });
+        const json = await res.json();
+        if (json && json.success) {
+          onSaved(json.jabatan || cleanJabatan, json.positions, json.divisions);
+        } else {
+          throw new Error((json && json.error) || 'Gagal menambah jabatan');
+        }
+      } catch (err) {
+        if (scope === 'main' && els.hint) {
+          els.hint.textContent = `Jabatan "${cleanJabatan}" siap dipakai & akan otomatis didaftarkan ke Master_Referensi saat simpan.`;
+          els.hint.style.color = '#b45309';
         }
       }
     }
@@ -1783,6 +2134,7 @@
             (e.nama || '').toLowerCase().includes(q) ||
             (e.id || '').toLowerCase().includes(q) ||
             (e.divisi || '').toLowerCase().includes(q) ||
+            (e.jabatan || '').toLowerCase().includes(q) ||
             (e.lokasi || '').toLowerCase().includes(q) ||
             (e.pt || '').toLowerCase().includes(q)
           )
@@ -1822,7 +2174,7 @@
               <span>${escapeHtml(e.nama)}</span>
               <span class="combo-tag">${escapeHtml(e.id)}</span>
             </div>
-            <div class="combo-item-sub">${escapeHtml(e.divisi || '-')} &bull; ${escapeHtml(e.lokasi || '-')} &bull; ${escapeHtml(e.pt || '-')}</div>
+            <div class="combo-item-sub">${escapeHtml(e.divisi || '-')}${(e.jabatan && e.jabatan !== '-') ? ' (' + escapeHtml(e.jabatan) + ')' : ''} &bull; ${escapeHtml(e.lokasi || '-')} &bull; ${escapeHtml(e.pt || '-')}</div>
           </div>
         `).join('');
 
@@ -1856,6 +2208,9 @@
         }
         if (emp.divisi) {
           setDivisiValue('main', emp.divisi);
+          onDivisiChanged('main', (emp.jabatan && emp.jabatan !== '-') ? emp.jabatan : '');
+        } else if (emp.jabatan && emp.jabatan !== '-') {
+          setJabatanValue('main', emp.jabatan);
         }
       } else {
         inputEl.value = '';
@@ -3515,6 +3870,7 @@
       document.getElementById('newEmpPT').value = document.getElementById('selPT').value;
       onSelectNewEmpPT(document.getElementById('selLokasi').value);
       setDivisiValue('modal', getDivisiValue('main') || (MASTER.divisions[0] || ''));
+      onDivisiChanged('modal', getJabatanValue('main') || '');
       document.getElementById('empModal').style.display = 'flex';
     }
 
@@ -3533,6 +3889,7 @@
       showEmpModalAlert('');
       const nama = document.getElementById('newEmpNama').value.trim();
       const divisiVal = getDivisiValue('modal').trim();
+      const jabatanVal = getJabatanValue('modal').trim();
 
       if (!nama) {
         showEmpModalAlert('Nama lengkap karyawan wajib diisi.', 'err');
@@ -3549,17 +3906,23 @@
         pt: document.getElementById('newEmpPT').value,
         lokasi: document.getElementById('newEmpLokasi').value,
         divisi: divisiVal,
+        jabatan: jabatanVal || '-',
         status: 'Aktif'
       };
 
       const btn = document.getElementById('btnSaveEmp');
       btn.disabled = true; btn.textContent = 'Menyimpan ke Master_Karyawan...';
 
-      const onDone = (newEmp, allDivs) => {
+      const onDone = (newEmp, allDivs, allPos) => {
         if (Array.isArray(allDivs) && allDivs.length > 0) {
           MASTER.divisions = uniqueList(allDivs);
         } else if (divisiVal && !MASTER.divisions.some(d => d.toLowerCase() === divisiVal.toLowerCase())) {
           MASTER.divisions.push(divisiVal);
+        }
+        if (Array.isArray(allPos) && allPos.length > 0) {
+          MASTER.positions = normalizePositions(allPos);
+        } else if (divisiVal && jabatanVal && jabatanVal !== '-') {
+          MASTER.positions = normalizePositions((MASTER.positions || []).concat([{ divisi: divisiVal, jabatan: jabatanVal }]));
         }
         MASTER.employees.push(newEmp);
         localStorage.setItem(STORAGE_KEY_MASTER, JSON.stringify(MASTER));
@@ -3570,11 +3933,12 @@
         closeEmpModal();
         btn.disabled = false; btn.textContent = 'Simpan & Pilih Karyawan';
         const rowInfo = newEmp.row ? ` (baris #${newEmp.row})` : '';
-        showSuccess(`<strong>Karyawan baru berhasil disimpan ke Master_Karyawan${rowInfo}!</strong><br>${escapeHtml(newEmp.nama)} (${escapeHtml(newEmp.id)}) &mdash; ${escapeHtml(newEmp.divisi)} / ${escapeHtml(newEmp.lokasi)}`);
+        const jabInfo = (newEmp.jabatan && newEmp.jabatan !== '-') ? ` (${escapeHtml(newEmp.jabatan)})` : '';
+        showSuccess(`<strong>Karyawan baru berhasil disimpan ke Master_Karyawan${rowInfo}!</strong><br>${escapeHtml(newEmp.nama)} (${escapeHtml(newEmp.id)}) &mdash; ${escapeHtml(newEmp.divisi)}${jabInfo} / ${escapeHtml(newEmp.lokasi)}`);
       };
 
       if (IS_APPS_SCRIPT_HOST) {
-        google.script.run.withSuccessHandler(res => onDone(res, null)).withFailureHandler(err => {
+        google.script.run.withSuccessHandler(res => onDone(res, null, null)).withFailureHandler(err => {
           btn.disabled = false; btn.textContent = 'Simpan & Pilih Karyawan';
           showEmpModalAlert('Gagal menyimpan ke Master_Karyawan: ' + (err.message || err), 'err');
         }).addNewEmployee(empData);
@@ -3602,7 +3966,7 @@
         if (!json.success) throw new Error(json.error || 'Gagal menambah karyawan');
         const savedEmp = json.employee || {};
         if (json.row && !savedEmp.row) savedEmp.row = json.row;
-        onDone(savedEmp, json.divisions);
+        onDone(savedEmp, json.divisions, json.positions);
       } catch (err) {
         btn.disabled = false; btn.textContent = 'Simpan & Pilih Karyawan';
         showEmpModalAlert('Gagal menyimpan ke Master_Karyawan: ' + (err.message || err), 'err');
@@ -3671,6 +4035,7 @@
       const emp = (MASTER.employees || []).find(e => e.id === selectedEmpId);
       const picVal = document.getElementById('txtPIC').value.trim();
       const divisiVal = getDivisiValue('main') || '-';
+      const jabatanVal = getJabatanValue('main') || '-';
       if (picVal) localStorage.setItem(STORAGE_KEY_PIC, picVal);
 
       const payload = {
@@ -3679,6 +4044,7 @@
         pt: document.getElementById('selPT').value,
         lokasi: document.getElementById('selLokasi').value,
         divisi: divisiVal,
+        jabatan: jabatanVal,
         pic: picVal,
         units: units
       };
@@ -3686,9 +4052,18 @@
       setSubmitButtonsState(true, `Mengunggah (${totalPhotos} Foto)...`);
 
       const onSaveSuccess = (json) => {
+        let updatedMaster = false;
         if (Array.isArray(json.divisions) && json.divisions.length > 0) {
           MASTER.divisions = uniqueList(json.divisions);
+          updatedMaster = true;
+        }
+        if (Array.isArray(json.positions) && json.positions.length > 0) {
+          MASTER.positions = normalizePositions(json.positions);
+          updatedMaster = true;
+        }
+        if (updatedMaster) {
           localStorage.setItem(STORAGE_KEY_MASTER, JSON.stringify(MASTER));
+          onDivisiChanged('main', getJabatanValue('main'));
         }
         setSubmitButtonsState(false, 'Simpan Semua Unit');
         showSuccess(`<strong>Berhasil menyimpan ${json.count} unit (${json.totalPhotos ?? totalPhotos} foto terpisah per kolom)!</strong><br>Kode Aset: <b>${json.codes.join(', ')}</b><br>Folder Drive: <a href="${json.folderUrl}" target="_blank">${escapeHtml(json.folderPath)}</a>`);
